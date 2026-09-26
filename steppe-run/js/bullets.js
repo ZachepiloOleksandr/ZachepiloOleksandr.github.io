@@ -1,7 +1,8 @@
 // Projectiles & combat resolution. Player auto-fires at the nearest in-range enemy.
 // Enemy bullets hurt the player AND other enemies (friendly fire — they shoot their own).
 import { angleTo } from './math.js';
-import { burst, addDamage, shake, FX_COLORS } from './fx.js';
+import { burst, shake, FX_COLORS } from './fx.js';
+import { damageEnemy } from './enemies.js';
 import { PALETTE as P } from './data.js';
 import { pointSolidHit, onScreen } from './world.js';
 
@@ -10,7 +11,7 @@ export function findNearest(state, x, y, maxR, visibleOnly) {
   let best = null, bestD = maxR * maxR;
   for (let i = 0; i < en.length; i++) {
     const e = en[i];
-    if (!e.alive) continue;
+    if (!e.alive || e.downed) continue;
     if (visibleOnly && !onScreen(state, e.x, e.y)) continue;
     const dx = e.x - x, dy = e.y - y;
     const d2 = dx * dx + dy * dy;
@@ -65,16 +66,11 @@ export function spawnEnemyBullet(state, x, y, angle, dmg, speed, opts = {}) {
   });
 }
 
-function hitEnemy(state, e, b) {
-  e.hp -= b.dmg;
-  e.hurtT = 0.12;
-  e.squash = 1;
+function hitEnemy(state, e, b, src) {
   const d = Math.hypot(b.vx, b.vy) || 1;
-  e.x += (b.vx / d) * 6; e.y += (b.vy / d) * 6;
-  burst(state, b.x, b.y, { n: 5, color: FX_COLORS.ouch, speed: 120, size: 8, life: 0.32 });
-  addDamage(state, e.x, e.y - e.radius, b.dmg);
-  state.A.enemyHurt();
-  if (e.hp <= 0 && e.alive) e.alive = false;
+  if (!e.def.vehicle) { e.x += (b.vx / d) * 6; e.y += (b.vy / d) * 6; }
+  burst(state, b.x, b.y, { n: 5, color: e.def.vehicle ? P.metal : FX_COLORS.ouch, speed: 120, size: 8, life: 0.32 });
+  damageEnemy(state, e, b.dmg, src);
 }
 
 export function hurtPlayer(state, amt) {
@@ -120,11 +116,11 @@ export function updateBullets(state, dt) {
       if (b.team === 'p') {
         for (let j = 0; j < en.length; j++) {
           const e = en[j];
-          if (!e.alive) continue;
+          if (!e.alive || e.downed) continue;
           if (b.hit && b.hit.indexOf(e) !== -1) continue;
           const dx = b.x - e.x, dy = b.y - e.y, rr = e.radius + b.r;
           if (dx * dx + dy * dy < rr * rr) {
-            hitEnemy(state, e, b);
+            hitEnemy(state, e, b, 'bullet');
             if (b.pierce > 0) { b.pierce--; (b.hit || (b.hit = [])).push(e); }
             else { dead = true; }
             break;
@@ -134,11 +130,11 @@ export function updateBullets(state, dt) {
         // Enemy bullet: friendly fire on other enemies first.
         for (let j = 0; j < en.length; j++) {
           const e = en[j];
-          if (!e.alive || e === b.owner) continue;
+          if (!e.alive || e.downed || e === b.owner) continue;
           const dx = b.x - e.x, dy = b.y - e.y, rr = e.radius + b.r;
           if (dx * dx + dy * dy < rr * rr) {
-            hitEnemy(state, e, b);
-            if (state.rng.chance(0.5)) {
+            hitEnemy(state, e, b, 'ff');
+            if (!e.def.vehicle && state.rng.chance(0.5)) {
               const fr = state.atlas.phraseFrame[state.rng.pick(['Ой, свої!', 'Це ж я!', 'Не в той бік!'])];
               if (fr) state.fx.floaters.push({ x: e.x, y: e.y - e.radius - 8, vy: -52, life: 1.0, maxLife: 1.0, spr: fr, scale: 0.78, r: 1, g: 0.9, b: 0.8 });
             }

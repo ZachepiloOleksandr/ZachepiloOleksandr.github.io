@@ -14,11 +14,20 @@ export function createHud() {
     death: $('death'), deathStats: $('deathStats'),
     start: $('startBtn'), retry: $('retryBtn'), stick: $('stick'),
     shopBtn: $('shopBtn'), shopBack: $('shopBack'), toMenu: $('toMenuBtn'),
+    actions: $('actions'), actFinish: $('actFinish'), actCapture: $('actCapture'),
+    droneBtn: $('droneBtn'), droneLbl: $('droneLbl'),
   };
+  let lastAct = '', lastDrone = '';
   let bannerT = null, lastHp = -1, lastWave = -1, lastKill = -1, lastEb = '';
+
+  function hideCombat() {
+    el.actions.classList.add('hidden'); el.droneBtn.classList.add('hidden');
+    lastAct = ''; lastDrone = '';
+  }
 
   const api = {
     onStart: null, onRetry: null, onMenu: null, onBankChange: null, bank: null,
+    onDrone: null, onFinish: null, onCapture: null,
 
     setHP(hp, max) {
       hp = Math.max(0, Math.round(hp));
@@ -34,6 +43,22 @@ export function createHud() {
       const key = n + '|' + pending;
       if (key === lastEb) return; lastEb = key;
       el.eb.textContent = n + ' ' + EB + (pending ? ' ⏳+' + pending : '');
+    },
+
+    // Finish/capture buttons, shown only next to a downed enemy.
+    showActions(show, capturing) {
+      const key = show + '|' + capturing;
+      if (key === lastAct) return; lastAct = key;
+      el.actions.classList.toggle('hidden', !show);
+      el.actCapture.classList.toggle('busy', !!capturing);
+    },
+
+    setDrone(s) {
+      const key = s.owned + '|' + s.ready + '|' + Math.ceil(s.next);
+      if (key === lastDrone) return; lastDrone = key;
+      el.droneBtn.classList.toggle('hidden', !s.owned);
+      el.droneBtn.classList.toggle('cool', !s.ready);
+      el.droneLbl.textContent = s.ready ? (s.owned > 1 ? 'ГОТОВО ×' + s.ready : 'ГОТОВО') : Math.ceil(s.next) + 'с';
     },
 
     banner(text, dur = 1500) {
@@ -55,6 +80,7 @@ export function createHud() {
     },
 
     showMenu(best, bank) {
+      hideCombat();
       el.menu.classList.remove('hidden');
       el.shop.classList.add('hidden');
       el.death.classList.add('hidden');
@@ -80,6 +106,7 @@ export function createHud() {
     },
 
     showDeath(stats) {
+      hideCombat();
       el.death.classList.remove('hidden');
       el.hud.classList.add('hidden');
       el.stick.classList.add('hidden');
@@ -87,6 +114,7 @@ export function createHud() {
         `Дійшов до <b>Хвилі ${stats.wave}</b><br/>` +
         `Принижено ворогів: <b>${stats.kills}</b><br/>` +
         `єБали: <b>+${stats.ebaly}</b> (всього ${stats.bank} ${EB})<br/>` +
+        (stats.captured || stats.evacuated ? `Полонених: <b>${stats.captured}</b> · евакуйовано: <b>${stats.evacuated}</b><br/>` : '') +
         (stats.lost ? `<small>Без підтвердження DELTA згоріло: ${stats.lost} ${EB}</small><br/>` : '') +
         `Рекорд: <b>Хвиля ${stats.best.wave}</b>`;
     },
@@ -116,6 +144,13 @@ export function createHud() {
   el.shopBtn.addEventListener('click', () => { renderShop(); el.menu.classList.add('hidden'); el.shop.classList.remove('hidden'); });
   el.shopBack.addEventListener('click', () => { el.shop.classList.add('hidden'); el.menu.classList.remove('hidden'); });
   el.toMenu.addEventListener('click', () => api.onMenu && api.onMenu());
+  // pointerdown (not click) so combat buttons react instantly while the other thumb steers.
+  const press = (btn, fn) => btn.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); fn(); });
+  press(el.droneBtn, () => {
+    if (!(api.onDrone && api.onDrone())) { el.droneBtn.classList.remove('shake'); void el.droneBtn.offsetWidth; el.droneBtn.classList.add('shake'); }
+  });
+  press(el.actFinish, () => api.onFinish && api.onFinish());
+  press(el.actCapture, () => api.onCapture && api.onCapture());
   el.start.addEventListener('click', () => api.onStart && api.onStart());
   el.retry.addEventListener('click', () => api.onRetry && api.onRetry());
   return api;

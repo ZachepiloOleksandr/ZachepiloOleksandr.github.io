@@ -2,7 +2,7 @@
 // that blocks both movement and bullets, and feather-grass decoration.
 // Rooms are generated one at a time at the origin; the player transitions room → room.
 import { clamp } from './math.js';
-import { PALETTE as P } from './data.js';
+import { PALETTE as P, VEHICLE_SCALE } from './data.js';
 
 const TS = 64;     // wall tile size
 const GTS = 128;  // ground tile size (seamless texture)
@@ -107,6 +107,26 @@ export function pointSolidHit(world, x, y) {
 export function onScreen(state, x, y, margin = 0) {
   return Math.abs(x - state.cam.x) <= state.view.halfW + margin &&
          Math.abs(y - state.cam.y) <= state.view.halfH + margin;
+}
+
+// Does solid cover block the straight line between two points? (line of sight for cover AI)
+export function losBlocked(world, x0, y0, x1, y1) {
+  const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1;
+  const os = world.obstacles;
+  for (let i = 0; i < os.length; i++) {
+    const o = os[i];
+    if (!o.blockBullets) continue;
+    const t = Math.max(0, Math.min(1, ((o.x - x0) * dx + (o.y - y0) * dy) / l2));
+    const px = x0 + dx * t - o.x, py = y0 + dy * t - o.y;
+    if (px * px + py * py < o.r * o.r) return true;
+  }
+  return false;
+}
+
+// A destroyed vehicle stays on the map as burnt cover.
+export function addWreck(world, x, y, rot) {
+  world.tall.push({ spr: 'nivaWreck', x, y, scale: VEHICLE_SCALE, rot, flat: true });
+  world.obstacles.push({ x, y, r: 30, blockBullets: true });
 }
 
 // Hard guarantee against tunnelling: a body's centre never leaves the walled interior.

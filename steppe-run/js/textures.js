@@ -8,7 +8,7 @@ const rgba = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 // Sprites are baked at SS× resolution (sizes below stay in world px), so they stay crisp when
 // the camera zooms them up on high-DPI phones.
 const SS = 2;
-const ATLAS_W = 2048, ATLAS_H = 1024;
+const ATLAS_W = 2048, ATLAS_H = 1536;
 const OUTLINE = 1.6; // world px, ink outline around characters/props
 
 export function buildAtlas() {
@@ -327,6 +327,49 @@ export function buildAtlas() {
   });
 
   // ---- loot ----
+  // ---- enemy: окопник — camo, big helmet, rifle, plate carrier (facing +x) ----
+  placeOutlined('okopnyk', 52, 48, (c, w, h) => {
+    const cx = w / 2, cy = h / 2;
+    c.fillStyle = rgba(P.stick); c.fillRect(cx - 4, cy + 1, 10, 4);
+    c.fillStyle = rgba(P.steel); c.fillRect(cx + 4, cy - 3, 24, 5);
+    c.fillStyle = rgba(P.ink); c.fillRect(cx + 26, cy - 2, 5, 3); c.fillRect(cx + 12, cy + 2, 4, 7);
+    c.fillStyle = rgba(P.ragsDk); c.beginPath(); c.ellipse(cx - 1, cy, 15, 17, 0, 0, 7); c.fill();
+    c.fillStyle = rgba(P.bush); c.beginPath(); c.ellipse(cx - 1, cy, 13, 14, 0, 0, 7); c.fill();
+    c.fillStyle = rgba(P.bushDk);                                      // camo blotches
+    for (const [ox, oy, r] of [[-6, -7, 4], [-8, 5, 3.5], [2, 9, 3], [-2, -1, 2.5]]) { c.beginPath(); c.arc(cx + ox, cy + oy, r, 0, 7); c.fill(); }
+    c.fillStyle = rgba(P.metalDk); c.fillRect(cx - 9, cy - 6, 8, 12);  // plate carrier
+    c.fillStyle = rgba(P.helmet); c.beginPath(); c.arc(cx + 2, cy, 10.5, 0, 7); c.fill();
+    c.fillStyle = rgba(P.uniformDk); c.beginPath(); c.arc(cx + 2, cy, 10.5, Math.PI * 1.1, Math.PI * 1.9); c.fill();
+    c.fillStyle = rgba(P.skin); c.fillRect(cx + 8, cy - 2, 4, 4);
+  });
+
+  // ---- enemy vehicle: Ніва (top-down, facing +x) ----
+  function niva(c, w, h, burnt) {
+    const body = burnt ? [52, 46, 40] : [104, 122, 84], dark = burnt ? [30, 26, 22] : [74, 88, 58];
+    c.fillStyle = rgba(P.ink, 0.9);                                    // wheels
+    for (const [x, y] of [[12, 3], [w - 22, 3], [12, h - 8], [w - 22, h - 8]]) c.fillRect(x, y, 11, 5);
+    c.fillStyle = rgba(body); c.beginPath(); c.roundRect ? c.roundRect(4, 6, w - 8, h - 12, 6) : c.rect(4, 6, w - 8, h - 12); c.fill();
+    c.fillStyle = rgba(dark); c.fillRect(w - 20, 8, 12, h - 16);       // hood
+    c.fillStyle = burnt ? rgba(P.ink, 0.8) : 'rgba(160,200,220,0.85)'; // windshield + rear window
+    c.fillRect(w - 27, 9, 6, h - 18); c.fillRect(9, 10, 4, h - 20);
+    c.fillStyle = rgba(dark); c.fillRect(15, 9, w - 43, h - 18);       // roof
+    c.strokeStyle = rgba(P.ink, 0.5); c.lineWidth = 1.2; c.strokeRect(15, 9, w - 43, h - 18);
+    if (!burnt) {
+      c.fillStyle = '#fff7c0'; c.fillRect(w - 6, 8, 3, 4); c.fillRect(w - 6, h - 12, 3, 4); // headlights
+      c.fillStyle = rgba(P.ink, 0.6); c.font = '900 7px sans-serif'; c.fillText('Z', 22, h / 2 + 2.5);
+    } else {
+      c.fillStyle = 'rgba(255,150,40,0.8)'; c.beginPath(); c.arc(w * 0.62, h / 2, 5, 0, 7); c.fill();
+    }
+  }
+  placeOutlined('niva', 72, 42, (c, w, h) => niva(c, w, h, false));
+  placeOutlined('nivaWreck', 72, 42, (c, w, h) => niva(c, w, h, true));
+
+  // ---- white flag for surrendering (pole at the bottom-left) ----
+  placeOutlined('whiteflag', 22, 26, (c, w, h) => {
+    c.strokeStyle = rgba(P.stick); c.lineWidth = 2; c.beginPath(); c.moveTo(3, h - 1); c.lineTo(3, 2); c.stroke();
+    c.fillStyle = '#fbfaf4'; c.beginPath(); c.moveTo(4, 3); c.quadraticCurveTo(12, 0, 20, 4); c.lineTo(20, 13); c.quadraticCurveTo(12, 10, 4, 13); c.closePath(); c.fill();
+  });
+
   // ---- market tech: FPV drone (top-down quad) ----
   placeOutlined('drone', 26, 26, (c, w, h) => {
     const m = w / 2;

@@ -15,7 +15,8 @@ import { updateFx, drawParticles, drawFloaters } from './fx.js';
 import { PERKS, LOOT, EB, EBALY } from './data.js';
 import { loadBank, saveBank, applyUpgrades } from './meta.js';
 import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
-import { resetDrones, updateDrones, drawDrones, placeWounded, updateWounded, drawWounded } from './drones.js';
+import { resetDrones, updateDrones, drawDrones, launchDrone, droneStatus } from './drones.js';
+import { placeWounded, drawWounded, updateActions, finishDowned, startCapture } from './actions.js';
 
 const TARGET_VIEW_H = 820; // world px visible vertically (zoom level) — device-independent
 const BEST_KEY = 'steppe.best';
@@ -48,7 +49,8 @@ function main() {
     cam: { x: 0, y: 0, shake: 0, sx: 0, sy: 0 },
     world: null, player: null,
     enemies: [], bullets: [], pickups: [], drones: [], fx: { particles: [], floaters: [] },
-    stats: { kills: 0, ebaly: 0, pending: 0, lastConfirmed: 0 },
+    stats: { kills: 0, ebaly: 0, pending: 0, lastConfirmed: 0, captured: 0, evacuated: 0 },
+    capturing: null,
     bank: loadBank(), clearT: 0,
     wave: { index: 0, phase: 'idle', queue: [], introT: 0, spawnCd: 0 },
     best: loadBest(),
@@ -128,6 +130,9 @@ function main() {
     state.stats.kills = 0;
     state.stats.ebaly = 0;
     state.stats.pending = 0;
+    state.stats.captured = 0;
+    state.stats.evacuated = 0;
+    state.capturing = null;
     resetDrones(state);
     placeWounded(state);
     state.clearT = 0;
@@ -191,12 +196,16 @@ function main() {
     saveBest(state.best);
     saveBank(state.bank);
     console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.ebaly + ' ' + EB + ' | bank ' + state.bank.ebaly);
-    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, lost: state.stats.lost, bank: state.bank.ebaly, best: state.best });
+    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, lost: state.stats.lost, bank: state.bank.ebaly,
+      captured: state.stats.captured, evacuated: state.stats.evacuated, best: state.best });
   }
 
   hud.onStart = newRun;
   hud.onRetry = newRun;
   hud.onMenu = menuScene;
+  hud.onDrone = () => launchDrone(state);
+  hud.onFinish = () => finishDowned(state);
+  hud.onCapture = () => startCapture(state);
   hud.bank = state.bank;
   hud.onBankChange = () => saveBank(state.bank);
   // Persist the bank if the app is backgrounded/closed mid-run.
@@ -228,7 +237,8 @@ function main() {
       updateWaves(state, dt);
       updatePickups(state, dt);
       updateDrones(state, dt);
-      updateWounded(state, dt);
+      updateActions(state, dt);
+      hud.setDrone(droneStatus(state));
       hud.setHP(state.player.hp, state.player.maxHp);
       hud.setKills(state.stats.kills);
       hud.setEbaly(state.stats.ebaly, state.stats.pending);
@@ -244,7 +254,7 @@ function main() {
 
   const ITEMS = [];
   function byY(a, b) { return a.y - b.y; }
-  function drawDeco(d) { R.draw(d.spr, d.x, d.y, { sx: d.scale, sy: d.scale, ay: 0.86 }); }
+  function drawDeco(d) { R.draw(d.spr, d.x, d.y, d.flat ? { rot: d.rot, sx: d.scale, sy: d.scale } : { sx: d.scale, sy: d.scale, ay: 0.86 }); }
 
   function render() {
     if (!state.world) return;

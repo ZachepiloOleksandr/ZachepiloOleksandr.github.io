@@ -1,4 +1,4 @@
-const CACHE = "steppe-v7";
+const CACHE = "steppe-v8";
 self.addEventListener("install", () => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(

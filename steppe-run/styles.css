@@ -292,3 +292,31 @@ html, body {
 .shopCard.shake { animation: shopShake 0.3s; }
 @keyframes shopShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 #shop .sub small, #deathStats small { color: #bcae8a; font-size: 0.72em; }
+
+/* ---------- Combat buttons (drone / finish / capture) ---------- */
+.actBtn {
+  pointer-events: auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 74px; height: 74px; border-radius: 50%;
+  background: rgba(58,40,18,0.82);
+  border: 3px solid var(--gold-deep);
+  color: #fff7e0; font-size: 28px; line-height: 1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.actBtn span { font: 900 10px/1 "Trebuchet MS", sans-serif; letter-spacing: 0.5px; color: #f2cf5e; }
+.actBtn:active { transform: scale(0.94); border-color: var(--gold); }
+#droneBtn {
+  position: absolute; z-index: 8;
+  right: 14px; bottom: calc(64px + env(safe-area-inset-bottom));
+}
+#droneBtn.cool { opacity: 0.55; }
+#droneBtn.shake { animation: shopShake 0.3s; }
+#actions {
+  position: absolute; z-index: 8;
+  right: 14px; bottom: calc(150px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+}
+#actFinish { border-color: #c0503c; }
+#actCapture { border-color: var(--good); }
+#actCapture.busy { background: rgba(60,110,40,0.9); }

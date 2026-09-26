@@ -2,6 +2,7 @@
 
 // Characters are drawn this much larger than their sprite so the art matches the hitbox.
 export const CHAR_SCALE = 1.25;
+export const VEHICLE_SCALE = 1.5;
 
 // Warm Ukrainian-steppe palette. RGB 0..255 — consumed by the procedural texture baker.
 export const PALETTE = {
@@ -49,11 +50,19 @@ export const SHOUTS = {
   friendly:['Ой, свої!', 'Це ж я!', 'Не в той бік!'],
   hurt:    ['Ай!', 'Тю!', 'Ну все...', 'Боляче!'],
   trip:    ['Гоп!', 'Спіткнувсь!', 'Ой-йой!'],
+  surrender:['Здаюсь!', 'Не стріляй!', 'Я кухар!', 'Хочу в полон!', 'Мене змусили!'],
+  revive:  ['Оклигав!', 'Я ще живий!'],
+  cover:   ['Прикрий!', 'Тримаю сектор!', 'Перебіжка!', 'Я за укриттям!'],
+  crew:    ['Горимо!', 'Всі з машини!', 'Тікаймо!', 'Ніва, прощавай!'],
 };
+
+// Floaters for player actions (baked as sprites too).
+export const ACTION_PHRASES = { captured: 'Полонений!', finished: 'Добито', evac: 'Евакуйовано!', bled: 'Не встигли...' };
 
 // All distinct strings the texture baker must pre-render into the atlas as sprites.
 export const ALL_PHRASES = [
-  ...new Set([].concat(SHOUTS.naked, SHOUTS.armed, SHOUTS.rifle, SHOUTS.shovel, SHOUTS.friendly, SHOUTS.hurt, SHOUTS.trip, ['+HP'])),
+  ...new Set([].concat(SHOUTS.naked, SHOUTS.armed, SHOUTS.rifle, SHOUTS.shovel, SHOUTS.friendly, SHOUTS.hurt, SHOUTS.trip, SHOUTS.surrender,
+    SHOUTS.revive, SHOUTS.cover, SHOUTS.crew, Object.values(ACTION_PHRASES), ['+HP'])),
 ];
 
 // Roguelike run upgrades. apply() mutates the player stat block in place.
@@ -75,14 +84,29 @@ export const EBALY = {
   deathConfirm: 0.5,   // share of pending єБали confirmed if you fall mid-wave
   evac: 5,             // evacuating a wounded comrade
   woundedChance: 0.6,  // chance a room has a wounded comrade to evacuate
-  evacR: 34,           // touch distance to pick him up
+  evacR: 40,           // stand this close to evacuate
+  evacHold: 1.6,       // seconds to load him onto the stretcher
+  bleed: 45,           // seconds before he bleeds out
+};
+
+// Downed enemies: finish them off or take them prisoner (worth more, takes time).
+export const DOWN = {
+  chance: 0.4,         // share of lethal hits (not drone) that leave an enemy downed instead
+  time: 9,             // seconds before a neglected downed enemy gets back up
+  reviveHp: 0.35,      // HP share he gets back up with
+  crawl: 16,           // crawl-away speed
+  actR: 80,            // player distance for the finish/capture buttons
+  captureT: 1.4,       // seconds to take him prisoner (player must stay close)
+  captureMul: 2,       // єБали for a prisoner = kill value × mul + bonus
+  captureBonus: 2,
 };
 
 // Market tech (bought with єБали, active every run).
+// Launched only by the 🚁 button; prefers vehicles (a drone kills a car with its crew inside).
 export const DRONE = {
-  cd: 4.2, cdPerLvl: 0.8,  // seconds between strikes, faster per level
-  speed: 620, dmg: 34, dmgPerWave: 3, blastR: 64,
-  orbitR: 38,
+  cd: 10, cdPerLvl: 1.5,   // recharge seconds per drone, faster per level
+  speed: 640, dmg: 40, dmgPerWave: 4, blastR: 70,
+  orbitR: 38, range: 620,
 };
 
 // Loot dropped by enemies: medkits heal on the spot.
@@ -98,7 +122,7 @@ export const LOOT = {
 
 // Маркет: permanent upgrades bought with banked єБали. lvl 0..max.
 export const UPGRADES = [
-  { id: 'fpv',    icon: '🚁', name: 'FPV-дрон',     desc: 'сам атакує ворогів; 3-й рівень — 2 дрони', max: 3, base: 60, apply: (p, l) => { p.fpv = l; } },
+  { id: 'fpv',    icon: '🚁', name: 'FPV-дрон',     desc: 'кнопка 🚁: удар по цілі, Ніву знищує з екіпажем; 3-й рівень — 2 дрони', max: 3, base: 60, apply: (p, l) => { p.fpv = l; } },
   { id: 'reb',    icon: '📡', name: 'РЕБ',          desc: '−12% ворожих пострілів (глушить)', max: 3, base: 45, apply: (p, l) => { p.reb = 0.12 * l; } },
   { id: 'nrk',    icon: '🚜', name: 'НРК-евакуація', desc: '1 раз за забіг витягує з того світу (50% HP)', max: 1, base: 150, apply: (p) => { p.revives = 1; } },
   { id: 'hp',     icon: '❤️', name: 'Загартування', desc: '+12 макс. HP',        max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
@@ -111,7 +135,7 @@ export const UPGRADES = [
 export function upgradeCost(u, lvl) { return Math.round(u.base * Math.pow(lvl + 1, 1.5)); }
 
 // Enemy archetypes. Escalating "competence", escalating farce.
-export const ENEMY = { SHOVEL: 0, PISTOL: 1, RIFLE: 2 };
+export const ENEMY = { SHOVEL: 0, PISTOL: 1, RIFLE: 2, COVER: 3, NIVA: 4 };
 
 // Per-type base stats (before per-wave scaling).
 export const ENEMY_DEFS = {
@@ -140,14 +164,45 @@ export const ENEMY_DEFS = {
     burst: 5, burstGap: 0.09,   // automatic spray then a long fumble to reload
     sprite: 'rifle',
   },
+  // "Окопник" (wave 3+): tough, accurate, fights from behind cover and peeks out to shoot.
+  [ENEMY.COVER]: {
+    hp: 95, speed: 104, radius: 19, touch: 10, score: 6,
+    ebaly: 4,
+    weapon: 'aimed', ai: 'cover',
+    stumbleChance: 0.05,
+    shootInterval: 1.3, accuracy: 0.86, bulletDmg: 11, bulletSpeed: 480,
+    burst: 2, burstGap: 0.18,
+    sprite: 'okopnyk',
+  },
+  // "Ніва" (wave 4+): rams the hero; when shot to pieces its crew bails out.
+  [ENEMY.NIVA]: {
+    hp: 170, speed: 185, radius: 34, touch: 18, score: 8,
+    ebaly: 6,
+    ai: 'car', vehicle: true,
+    stumbleChance: 0,
+    sprite: 'niva',
+  },
 };
+
+// Niva crew (always 4), tougher the deeper the run.
+export function nivaCrew(n) {
+  const S = ENEMY.SHOVEL, Pi = ENEMY.PISTOL, R = ENEMY.RIFLE, C = ENEMY.COVER;
+  if (n < 6) return [S, S, S, Pi];
+  if (n < 9) return [S, S, Pi, R];
+  if (n < 12) return [S, Pi, R, C];
+  return [Pi, R, C, C];
+}
 
 // Wave plan: returns an array of ENEMY type ids to spawn this wave (== room number).
 export function waveComposition(n) {
   const shovel = 4 + Math.round(n * 1.4);
   const pistol = n >= 2 ? Math.round((n - 1) * 1.0) : 0;
   const rifle = n >= 5 ? Math.round((n - 4) * 0.9) : 0;
+  const cover = n >= 3 ? Math.round((n - 2) * 0.6) : 0;
+  const niva = n >= 4 ? Math.floor((n - 1) / 3) : 0;
   const list = [];
+  for (let i = 0; i < cover; i++) list.push(ENEMY.COVER);
+  for (let i = 0; i < niva; i++) list.push(ENEMY.NIVA);
   for (let i = 0; i < shovel; i++) list.push(ENEMY.SHOVEL);
   for (let i = 0; i < pistol; i++) list.push(ENEMY.PISTOL);
   for (let i = 0; i < rifle; i++) list.push(ENEMY.RIFLE);
