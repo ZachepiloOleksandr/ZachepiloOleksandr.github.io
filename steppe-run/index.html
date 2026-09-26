@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#caa84a" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Степовий Забіг</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="game">
+    <canvas id="gl"></canvas>
+
+    <!-- Room transition fade -->
+    <div id="fade"></div>
+
+    <!-- FPS meter -->
+    <div id="fps">– fps</div>
+
+    <!-- Coordinate/frame recorder (2.5s burst into the log) -->
+    <button id="recBtn">REC</button>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div id="topbar">
+        <div id="hpwrap">
+          <div id="hpbar"><div id="hpfill"></div></div>
+          <span id="hplabel">100</span>
+        </div>
+        <div id="stats">
+          <span id="waveLabel">Хвиля 1</span>
+          <span id="killLabel">☠ 0</span>
+        </div>
+      </div>
+      <div id="banner" class="hidden"></div>
+    </div>
+
+    <!-- Virtual joystick -->
+    <div id="stick" class="hidden">
+      <div id="stickBase"></div>
+      <div id="stickKnob"></div>
+    </div>
+
+    <!-- Menu -->
+    <div id="menu" class="overlay">
+      <h1>СТЕПОВИЙ<br/>ЗАБІГ</h1>
+      <p class="sub">Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?</p>
+      <button id="startBtn" class="btn">ПОЧАТИ ЗАБІГ</button>
+      <p class="best" id="menuBest"></p>
+      <p class="hint">Тягни пальцем будь-де ліворуч/знизу — стрільба автоматична.</p>
+    </div>
+
+    <!-- Perk selection -->
+    <div id="perks" class="overlay hidden">
+      <h2>ХВИЛЮ ПРОЙДЕНО!</h2>
+      <p class="sub">Обери апгрейд для забігу:</p>
+      <div id="perkCards"></div>
+    </div>
+
+    <!-- Death screen -->
+    <div id="death" class="overlay hidden">
+      <h2>ЗАБІГ ЗАВЕРШЕНО</h2>
+      <div id="deathStats"></div>
+      <button id="retryBtn" class="btn">НОВИЙ ЗАБІГ</button>
+    </div>
+  </div>
+
+  <script src="js/devlog.js"></script>
+  <script type="module" src="js/main.js"></script>
+  <script>if ('serviceWorker' in navigator) { addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }</script>
+</body>
+</html>
