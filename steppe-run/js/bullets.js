@@ -51,6 +51,12 @@ export function updatePlayerFire(state, dt) {
 }
 
 export function spawnEnemyBullet(state, x, y, angle, dmg, speed, opts = {}) {
+  // РЕБ jams a share of enemy shots (they fizzle at the muzzle).
+  const reb = state.player.reb;
+  if (reb && state.rng.chance(reb)) {
+    burst(state, x, y, { n: 4, color: P.slipper, speed: 50, size: 6, life: 0.25 });
+    return;
+  }
   const cos = Math.cos(angle), sin = Math.sin(angle);
   state.bullets.push({
     x, y, vx: cos * speed, vy: sin * speed,
@@ -79,7 +85,19 @@ export function hurtPlayer(state, amt) {
   state.A.playerHurt();
   shake(state, 12);
   burst(state, p.x, p.y, { n: 8, color: FX_COLORS.ouch, speed: 130, size: 9, life: 0.4 });
-  if (p.hp <= 0) { p.hp = 0; p.alive = false; }
+  if (p.hp <= 0) {
+    if (p.revives > 0) {
+      // НРК drags the hero out: back on his feet at half HP with a short grace window.
+      p.revives--;
+      p.hp = Math.round(p.maxHp * 0.5);
+      p.hurtT = 2;
+      burst(state, p.x, p.y, { n: 18, color: P.white, speed: 200, size: 12, life: 0.6 });
+      state.onBanner('НРК евакуював! 🚜');
+      console.log('NRK revive → hp ' + p.hp);
+      return;
+    }
+    p.hp = 0; p.alive = false;
+  }
 }
 
 export function updateBullets(state, dt) {

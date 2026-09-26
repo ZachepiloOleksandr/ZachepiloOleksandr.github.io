@@ -19,7 +19,10 @@ export function createPlayer(state) {
     multishot: 0,    // extra pellets beyond the first
     pierce: 0,
     magnetR: LOOT.magnetR,
-    ebalyBonus: 0,   // extra єБали per kill (Арсенал upgrade)
+    ebalyBonus: 0,   // extra єБали per kill (Маркет upgrade)
+    fpv: 0,          // FPV-drone level
+    reb: 0,          // chance an enemy shot is jammed
+    revives: 0,      // НРК evacuations left this run
     aim: 0,
     walk: 0,
     hurtT: 0,

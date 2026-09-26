@@ -10,12 +10,12 @@ export function createHud() {
     wave: $('waveLabel'), kill: $('killLabel'), eb: $('ebLabel'), banner: $('banner'),
     menu: $('menu'), menuBest: $('menuBest'), menuBank: $('menuBank'),
     shop: $('shop'), shopBank: $('shopBank'), shopCards: $('shopCards'),
-    perks: $('perks'), perkCards: $('perkCards'),
+    perks: $('perks'), perkCards: $('perkCards'), perkNote: $('perkNote'),
     death: $('death'), deathStats: $('deathStats'),
     start: $('startBtn'), retry: $('retryBtn'), stick: $('stick'),
     shopBtn: $('shopBtn'), shopBack: $('shopBack'), toMenu: $('toMenuBtn'),
   };
-  let bannerT = null, lastHp = -1, lastWave = -1, lastKill = -1, lastEb = -1;
+  let bannerT = null, lastHp = -1, lastWave = -1, lastKill = -1, lastEb = '';
 
   const api = {
     onStart: null, onRetry: null, onMenu: null, onBankChange: null, bank: null,
@@ -29,7 +29,12 @@ export function createHud() {
     },
     setWave(n) { if (n === lastWave) return; lastWave = n; el.wave.textContent = 'Хвиля ' + n; },
     setKills(k) { if (k === lastKill) return; lastKill = k; el.kill.textContent = '☠ ' + k; },
-    setEbaly(n) { if (n === lastEb) return; lastEb = n; el.eb.textContent = n + ' ' + EB; },
+    // Confirmed єБали + claims pending DELTA verification (⏳).
+    setEbaly(n, pending) {
+      const key = n + '|' + pending;
+      if (key === lastEb) return; lastEb = key;
+      el.eb.textContent = n + ' ' + EB + (pending ? ' ⏳+' + pending : '');
+    },
 
     banner(text, dur = 1500) {
       el.banner.textContent = text;
@@ -53,6 +58,7 @@ export function createHud() {
       el.menu.classList.remove('hidden');
       el.shop.classList.add('hidden');
       el.death.classList.add('hidden');
+      el.perks.classList.add('hidden');
       el.menuBank.textContent = bank ? bank.ebaly : 0;
       el.hud.classList.add('hidden');
       el.stick.classList.add('hidden');
@@ -60,8 +66,9 @@ export function createHud() {
         ? `Рекорд: Хвиля ${best.wave} · принижено ${best.kills}` : '';
     },
 
-    showPerks(perks, cb) {
+    showPerks(perks, confirmed, cb) {
       el.perks.classList.remove('hidden');
+      el.perkNote.textContent = confirmed ? `DELTA підтвердила: +${confirmed} ${EB}` : '';
       el.perkCards.innerHTML = '';
       perks.forEach((pk) => {
         const c = document.createElement('div');
@@ -79,7 +86,8 @@ export function createHud() {
       el.deathStats.innerHTML =
         `Дійшов до <b>Хвилі ${stats.wave}</b><br/>` +
         `Принижено ворогів: <b>${stats.kills}</b><br/>` +
-        `єБали за кіли: <b>+${stats.ebaly}</b> (всього ${stats.bank} ${EB})<br/>` +
+        `єБали: <b>+${stats.ebaly}</b> (всього ${stats.bank} ${EB})<br/>` +
+        (stats.lost ? `<small>Без підтвердження DELTA згоріло: ${stats.lost} ${EB}</small><br/>` : '') +
         `Рекорд: <b>Хвиля ${stats.best.wave}</b>`;
     },
   };

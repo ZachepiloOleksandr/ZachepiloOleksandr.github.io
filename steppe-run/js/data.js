@@ -67,8 +67,23 @@ export const PERKS = [
   { id: 'heal',     icon: '🩹', name: 'Аптечка',           desc: '+20 макс. HP, лікує', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
 ];
 
-// єБали: awarded on every kill (per ENEMY_DEFS.ebaly), banked between runs, spent in the Арсенал.
+// єБали (after the real "Армія дронів. Бонус" program): every confirmed result earns points,
+// which are exchanged for tech in the Маркет. Results go to "DELTA" for verification and are
+// credited when the wave is cleared; dying mid-wave confirms only part of the pending claims.
 export const EB = 'єБ';
+export const EBALY = {
+  deathConfirm: 0.5,   // share of pending єБали confirmed if you fall mid-wave
+  evac: 5,             // evacuating a wounded comrade
+  woundedChance: 0.6,  // chance a room has a wounded comrade to evacuate
+  evacR: 34,           // touch distance to pick him up
+};
+
+// Market tech (bought with єБали, active every run).
+export const DRONE = {
+  cd: 4.2, cdPerLvl: 0.8,  // seconds between strikes, faster per level
+  speed: 620, dmg: 34, dmgPerWave: 3, blastR: 64,
+  orbitR: 38,
+};
 
 // Loot dropped by enemies: medkits heal on the spot.
 export const LOOT = {
@@ -81,8 +96,11 @@ export const LOOT = {
   vacuumDelay: 1.1,   // after a wave clears: time for leftovers to fly in before the perk screen
 };
 
-// Permanent upgrades bought with banked єБали in the menu shop. lvl 0..max.
+// Маркет: permanent upgrades bought with banked єБали. lvl 0..max.
 export const UPGRADES = [
+  { id: 'fpv',    icon: '🚁', name: 'FPV-дрон',     desc: 'сам атакує ворогів; 3-й рівень — 2 дрони', max: 3, base: 60, apply: (p, l) => { p.fpv = l; } },
+  { id: 'reb',    icon: '📡', name: 'РЕБ',          desc: '−12% ворожих пострілів (глушить)', max: 3, base: 45, apply: (p, l) => { p.reb = 0.12 * l; } },
+  { id: 'nrk',    icon: '🚜', name: 'НРК-евакуація', desc: '1 раз за забіг витягує з того світу (50% HP)', max: 1, base: 150, apply: (p) => { p.revives = 1; } },
   { id: 'hp',     icon: '❤️', name: 'Загартування', desc: '+12 макс. HP',        max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
   { id: 'dmg',    icon: '💥', name: 'Набої',        desc: '+8% шкоди',           max: 5, base: 25, apply: (p, l) => { p.damage *= 1 + 0.08 * l; } },
   { id: 'rate',   icon: '🔥', name: 'Затвор',       desc: '+7% темп стрільби',   max: 5, base: 25, apply: (p, l) => { p.fireRate *= 1 + 0.07 * l; } },

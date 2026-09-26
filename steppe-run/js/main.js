@@ -12,9 +12,10 @@ import { updatePlayerFire, updateBullets, drawBullets } from './bullets.js';
 import { updateEnemies, drawEnemy } from './enemies.js';
 import { startRun, startWave, updateWaves } from './waves.js';
 import { updateFx, drawParticles, drawFloaters } from './fx.js';
-import { PERKS, LOOT, EB } from './data.js';
+import { PERKS, LOOT, EB, EBALY } from './data.js';
 import { loadBank, saveBank, applyUpgrades } from './meta.js';
 import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
+import { resetDrones, updateDrones, drawDrones, placeWounded, updateWounded, drawWounded } from './drones.js';
 
 const TARGET_VIEW_H = 820; // world px visible vertically (zoom level) — device-independent
 const BEST_KEY = 'steppe.best';
@@ -46,13 +47,13 @@ function main() {
     zoom: 1, view: { halfW: 420, halfH: 420 },
     cam: { x: 0, y: 0, shake: 0, sx: 0, sy: 0 },
     world: null, player: null,
-    enemies: [], bullets: [], pickups: [], fx: { particles: [], floaters: [] },
-    stats: { kills: 0, ebaly: 0 },
+    enemies: [], bullets: [], pickups: [], drones: [], fx: { particles: [], floaters: [] },
+    stats: { kills: 0, ebaly: 0, pending: 0, lastConfirmed: 0 },
     bank: loadBank(), clearT: 0,
     wave: { index: 0, phase: 'idle', queue: [], introT: 0, spawnCd: 0 },
     best: loadBest(),
     onBanner: (t) => hud.banner(t),
-    onWaveCleared: () => { vacuumPickups(state); state.clearT = LOOT.vacuumDelay; },
+    onWaveCleared: () => { vacuumPickups(state); state.clearT = LOOT.vacuumDelay; confirmPending(1); },
   };
 
   // Fixed zoom (the "as before" close-up). Rooms are generated to match this viewport,
@@ -90,8 +91,18 @@ function main() {
     state.enemies.length = 0;
     state.bullets.length = 0;
     state.pickups.length = 0;
+    state.drones.length = 0;
     state.fx.particles.length = 0;
     state.fx.floaters.length = 0;
+  }
+
+  // DELTA verification: move pending єБали claims into the bank (share = 1 on wave clear).
+  function confirmPending(share) {
+    const s = state.stats, ok = Math.floor(s.pending * share);
+    console.log('DELTA confirm ' + ok + '/' + s.pending + ' ' + EB);
+    s.ebaly += ok; state.bank.ebaly += ok;
+    s.lastConfirmed = ok; s.lost = s.pending - ok; s.pending = 0;
+    saveBank(state.bank);
   }
 
   function menuScene() {
@@ -116,12 +127,15 @@ function main() {
     state.cam.x = state.player.x; state.cam.y = state.player.y; state.cam.shake = 0;
     state.stats.kills = 0;
     state.stats.ebaly = 0;
+    state.stats.pending = 0;
+    resetDrones(state);
+    placeWounded(state);
     state.clearT = 0;
     console.log('RUN start | bank ' + state.bank.ebaly + ' ' + EB + ' | up ' + JSON.stringify(state.bank.up));
     input.reset();
     hud.setHP(state.player.hp, state.player.maxHp);
     hud.setKills(0);
-    hud.setEbaly(0);
+    hud.setEbaly(0, 0);
     hud.showGame();
     state.status = 'playing';
     startRun(state);
@@ -136,7 +150,7 @@ function main() {
       const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
     }
     const picks = pool.slice(0, 3);
-    hud.showPerks(picks, (pk) => {
+    hud.showPerks(picks, state.stats.lastConfirmed, (pk) => {
       pk.apply(state.player);
       A.perk();
       hud.setHP(state.player.hp, state.player.maxHp);
@@ -155,6 +169,8 @@ function main() {
     setTimeout(() => {
       generateRoom(state, next);
       placePlayerAtEntry(state);
+      placeWounded(state);
+      resetDrones(state);
       state.bullets.length = 0;
       state.pickups.length = 0;
       state.fx.particles.length = 0;
@@ -169,12 +185,13 @@ function main() {
   function die() {
     state.status = 'dead';
     A.death();
+    confirmPending(EBALY.deathConfirm);
     if (state.wave.index > state.best.wave) state.best.wave = state.wave.index;
     if (state.stats.kills > state.best.kills) state.best.kills = state.stats.kills;
     saveBest(state.best);
     saveBank(state.bank);
     console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.ebaly + ' ' + EB + ' | bank ' + state.bank.ebaly);
-    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, bank: state.bank.ebaly, best: state.best });
+    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, lost: state.stats.lost, bank: state.bank.ebaly, best: state.best });
   }
 
   hud.onStart = newRun;
@@ -182,7 +199,7 @@ function main() {
   hud.onMenu = menuScene;
   hud.bank = state.bank;
   hud.onBankChange = () => saveBank(state.bank);
-  // єБали are credited to the bank on each kill; persist if the app is backgrounded/closed mid-run.
+  // Persist the bank if the app is backgrounded/closed mid-run.
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveBank(state.bank); });
 
   function updateCamera(dt) {
@@ -210,9 +227,11 @@ function main() {
       updateBullets(state, dt);
       updateWaves(state, dt);
       updatePickups(state, dt);
+      updateDrones(state, dt);
+      updateWounded(state, dt);
       hud.setHP(state.player.hp, state.player.maxHp);
       hud.setKills(state.stats.kills);
-      hud.setEbaly(state.stats.ebaly);
+      hud.setEbaly(state.stats.ebaly, state.stats.pending);
       if (!state.player.alive) die();
       else if (state.clearT > 0) {
         state.clearT -= dt;
@@ -262,8 +281,10 @@ function main() {
       else drawDeco(it);
     }
 
+    drawWounded(R, state);
     drawPickups(R, state);
     drawBullets(R, state);
+    drawDrones(R, state);
     drawParticles(R, state);
     R.draw('vignette', cam.x + cam.sx, cam.y + cam.sy, { w: state.view.halfW * 2 + 4, h: state.view.halfH * 2 + 4 });
     drawFloaters(R, state);

@@ -327,6 +327,32 @@ export function buildAtlas() {
   });
 
   // ---- loot ----
+  // ---- market tech: FPV drone (top-down quad) ----
+  placeOutlined('drone', 26, 26, (c, w, h) => {
+    const m = w / 2;
+    c.strokeStyle = rgba(P.metalDk); c.lineWidth = 2.4;
+    c.beginPath(); c.moveTo(5, 5); c.lineTo(w - 5, h - 5); c.moveTo(w - 5, 5); c.lineTo(5, h - 5); c.stroke();
+    c.fillStyle = 'rgba(210,220,230,0.55)';
+    for (const [x, y] of [[5, 5], [w - 5, 5], [5, h - 5], [w - 5, h - 5]]) { c.beginPath(); c.arc(x, y, 4.2, 0, 7); c.fill(); }
+    c.fillStyle = rgba(P.uniformDk); c.fillRect(m - 4, m - 4, 8, 8);
+    c.fillStyle = '#e8483c'; c.beginPath(); c.arc(m + 2, m, 1.6, 0, 7); c.fill();
+  });
+
+  // ---- wounded comrade lying on the ground (head to +x) ----
+  placeOutlined('wounded', 44, 30, (c, w, h) => {
+    c.fillStyle = rgba(P.uniformDk); c.beginPath(); c.ellipse(w / 2 - 3, h / 2, 15, 9, 0, 0, 7); c.fill();
+    c.fillStyle = rgba(P.uniform); c.beginPath(); c.ellipse(w / 2 - 3, h / 2, 13, 7, 0, 0, 7); c.fill();
+    c.fillStyle = rgba(P.uniformDk); c.fillRect(4, h / 2 - 6, 8, 4); c.fillRect(4, h / 2 + 2, 8, 4); // legs
+    c.fillStyle = rgba(P.skin); c.beginPath(); c.arc(w - 11, h / 2, 6, 0, 7); c.fill();
+    c.fillStyle = rgba(P.helmet); c.beginPath(); c.arc(w - 12, h / 2, 6.5, Math.PI * 0.5, Math.PI * 1.5); c.fill();
+    c.fillStyle = '#f4f0e6'; c.fillRect(w / 2 - 2, h / 2 - 7, 6, 14); // bandage
+    c.fillStyle = '#d23a32'; c.fillRect(w / 2, h / 2 - 2, 2.5, 4);
+  });
+  place('medcross', 22, 22, (c, w, h) => {
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 1, 0, 7); c.fill();
+    c.fillStyle = '#d23a32'; c.fillRect(w / 2 - 2.5, 4, 5, h - 8); c.fillRect(4, h / 2 - 2.5, w - 8, 5);
+  });
+
   placeOutlined('medkit', 24, 20, (c, w, h) => {
     c.fillStyle = '#f4f0e6'; c.beginPath(); c.roundRect ? c.roundRect(2, 3, w - 4, h - 5, 3) : c.rect(2, 3, w - 4, h - 5); c.fill();
     c.fillStyle = '#d23a32'; c.fillRect(w / 2 - 2, 6, 4, h - 11); c.fillRect(w / 2 - 6, h / 2 - 1.5, 12, 4);

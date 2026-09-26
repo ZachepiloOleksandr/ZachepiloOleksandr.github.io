@@ -143,10 +143,9 @@ function onDeath(state, e) {
   if (e.type === ENEMY.SHOVEL && state.rng.chance(0.6)) throwSprite(state, e.x, e.y, 'pants', {});
   shake(state, 4);
   dropLoot(state, e);
-  // єБали for the kill — credited straight to the bank so they survive between runs.
+  // єБали claim goes to DELTA verification; credited when the wave is cleared.
   const eb = e.def.ebaly + state.player.ebalyBonus;
-  state.stats.ebaly += eb;
-  state.bank.ebaly += eb;
+  state.stats.pending += eb;
   addEbaly(state, e.x, e.y - e.radius - 18, eb);
   state.A.ebaly();
 }

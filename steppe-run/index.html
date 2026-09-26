@@ -50,7 +50,7 @@
       <h1>СТЕПОВИЙ<br/>ЗАБІГ</h1>
       <p class="sub">Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?</p>
       <button id="startBtn" class="btn">ПОЧАТИ ЗАБІГ</button>
-      <button id="shopBtn" class="btn btn2">АРСЕНАЛ · <span id="menuBank">0</span> єБ</button>
+      <button id="shopBtn" class="btn btn2">МАРКЕТ · <span id="menuBank">0</span> єБ</button>
       <p class="best" id="menuBest"></p>
       <p class="hint">Тягни пальцем будь-де ліворуч/знизу — стрільба автоматична.</p>
     </div>
@@ -58,6 +58,7 @@
     <!-- Perk selection -->
     <div id="perks" class="overlay hidden">
       <h2>ХВИЛЮ ПРОЙДЕНО!</h2>
+      <p class="best" id="perkNote"></p>
       <p class="sub">Обери апгрейд для забігу:</p>
       <div id="perkCards"></div>
     </div>
@@ -67,13 +68,13 @@
       <h2>ЗАБІГ ЗАВЕРШЕНО</h2>
       <div id="deathStats"></div>
       <button id="retryBtn" class="btn">НОВИЙ ЗАБІГ</button>
-      <button id="toMenuBtn" class="btn btn2">В МЕНЮ · АРСЕНАЛ</button>
+      <button id="toMenuBtn" class="btn btn2">В МЕНЮ · МАРКЕТ</button>
     </div>
 
     <!-- Meta shop: permanent upgrades for banked єБали -->
     <div id="shop" class="overlay hidden">
-      <h2>АРСЕНАЛ</h2>
-      <p class="sub">єБали: <b id="shopBank">0</b><br/><small>Нараховуються за кожен кіл і зберігаються між забігами</small></p>
+      <h2>МАРКЕТ</h2>
+      <p class="sub">єБали: <b id="shopBank">0</b><br/><small>Бали за підтверджені кіли й евакуацію — обмінюй на техніку</small></p>
       <div id="shopCards"></div>
       <button id="shopBack" class="btn btn2">НАЗАД</button>
     </div>
