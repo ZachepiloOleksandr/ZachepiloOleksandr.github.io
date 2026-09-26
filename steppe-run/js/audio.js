@@ -50,6 +50,7 @@ export function createAudio() {
     playerHurt() { blip('sawtooth', 160, 60, 0.2, 0.28); },
     enemyShoot() { if (throttle('es', 90)) blip('square', 300, 200, 0.08, 0.08); },
     waveClear() { [523, 659, 784, 1047].forEach((f, i) => blip('triangle', f, f, 0.14, 0.18, i * 0.09)); },
+    coin() { if (throttle('coin', 45)) blip('square', 1320, 1760, 0.07, 0.09); },
     perk() { blip('triangle', 660, 990, 0.16, 0.2); },
     death() { [330, 262, 196, 147].forEach((f, i) => blip('sawtooth', f, f * 0.98, 0.3, 0.2, i * 0.16)); },
     start() { blip('square', 440, 660, 0.1, 0.18); },

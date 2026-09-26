@@ -268,3 +268,26 @@ html, body {
 .perkCard .ic { font-size: 34px; line-height: 1; }
 .perkCard .txt h3 { color: var(--gold); font-size: clamp(17px, 5vw, 21px); margin-bottom: 3px; }
 .perkCard .txt p { color: #e7dcc0; font-size: clamp(13px, 3.8vw, 15px); line-height: 1.3; }
+
+/* ---------- Meta shop ---------- */
+.btn2 {
+  background: linear-gradient(180deg, #8a6a34, #5e4420);
+  color: #f7e6b8;
+  box-shadow: 0 6px 0 #3e2c12, 0 10px 18px rgba(0,0,0,0.45);
+  font-size: clamp(15px, 4.6vw, 20px);
+  padding: 13px 26px;
+}
+.btn2:active { box-shadow: 0 2px 0 #3e2c12, 0 4px 10px rgba(0,0,0,0.45); }
+#coinLabel { color: #ffd75e !important; }
+#shopCards { display: flex; flex-direction: column; gap: 10px; width: min(92vw, 440px); max-height: 58vh; overflow-y: auto; }
+.shopCard { padding: 12px 14px; }
+.shopCard .txt { flex: 1; text-align: left; }
+.shopCard .pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
+.shopCard .pips i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #f2c14e; }
+.shopCard .pips i.on { background: #f2c14e; }
+.shopCard .price { color: #ffd75e; font-weight: 900; font-size: clamp(15px, 4.6vw, 19px); white-space: nowrap; }
+.shopCard.poor { opacity: 0.55; }
+.shopCard.maxed { border-color: var(--good); opacity: 0.8; }
+.shopCard.shake { animation: shopShake 0.3s; }
+@keyframes shopShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+#shop .sub small { color: #bcae8a; font-size: 0.72em; }

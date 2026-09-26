@@ -2,6 +2,7 @@
 import { clamp, lerp, angleTo } from './math.js';
 import { findNearest } from './bullets.js';
 import { resolveCircle } from './world.js';
+import { LOOT, CHAR_SCALE } from './data.js';
 
 export function createPlayer(state) {
   const w = state.world;
@@ -17,6 +18,7 @@ export function createPlayer(state) {
     range: 430,
     multishot: 0,    // extra pellets beyond the first
     pierce: 0,
+    magnetR: LOOT.magnetR,
     aim: 0,
     walk: 0,
     hurtT: 0,
@@ -38,12 +40,12 @@ export function updatePlayer(state, dt) {
   p.x += p.vx * dt;
   p.y += p.vy * dt;
 
-  // Resolve against room walls, the closed door, and solid cover.
+  // Resolve against room walls and solid cover.
   const res = resolveCircle(state.world, p.x, p.y, p.radius);
   p.x = res[0]; p.y = res[1];
-  // Safety bounds (allow stepping into an open gate to exit).
-  p.x = clamp(p.x, -50, state.world.w + 50);
-  p.y = clamp(p.y, -50, state.world.h + 50);
+  const w = state.world, m = w.wt + p.radius;
+  p.x = clamp(p.x, m, w.w - m);
+  p.y = clamp(p.y, m, w.h - m);
 
   // Auto-aim: face the nearest enemy (track even slightly beyond fire range).
   const target = findNearest(state, p.x, p.y, p.range * 1.6, true);
@@ -61,5 +63,5 @@ export function drawPlayer(R, state) {
   const bob = Math.sin(p.walk * 1.2) * 1.6;
   const flashing = p.hurtT > 0 && (Math.floor(p.hurtT * 30) % 2 === 0);
   const tint = flashing ? { r: 1, g: 0.5, b: 0.5 } : {};
-  R.draw('soldier', p.x, p.y - 2 + bob, { rot: p.aim, r: tint.r, g: tint.g, b: tint.b });
+  R.draw('soldier', p.x, p.y - 2 + bob, { rot: p.aim, sx: CHAR_SCALE, sy: CHAR_SCALE, r: tint.r, g: tint.g, b: tint.b });
 }

@@ -2,11 +2,12 @@
 //   SHOVEL — голі та босі: rush for melee, occasionally fling a shovel, trip, panic.
 //   PISTOL — озброєні-але-безпорадні: a pistol, wild single shots, friendly fire.
 //   RIFLE  — "автоматники" (wave 5+): automatic bursts, sprays wildly, jams.
-import { angleTo, dist, clamp, approach } from './math.js';
-import { ENEMY, ENEMY_DEFS, waveScale, PALETTE as P } from './data.js';
+import { angleTo, dist, approach } from './math.js';
+import { ENEMY, ENEMY_DEFS, waveScale, PALETTE as P, CHAR_SCALE } from './data.js';
 import { burst, shout, throwSprite, shake } from './fx.js';
 import { spawnEnemyBullet, hurtPlayer } from './bullets.js';
-import { resolveCircle, onScreen } from './world.js';
+import { resolveCircle, onScreen, clampInside } from './world.js';
+import { dropLoot } from './pickups.js';
 
 export function spawnEnemy(state, type, x, y) {
   const def = ENEMY_DEFS[type];
@@ -121,11 +122,10 @@ function updateOne(state, e, dt) {
   e.vy += (my * spd - e.vy) * k;
   e.x += e.vx * dt; e.y += e.vy * dt;
 
-  // Collide with room walls / closed door / cover.
+  // Collide with room walls / cover.
   const res = resolveCircle(state.world, e.x, e.y, e.radius);
   e.x = res[0]; e.y = res[1];
-  e.x = clamp(e.x, e.radius, state.world.w - e.radius);
-  e.y = clamp(e.y, e.radius, state.world.h - e.radius);
+  clampInside(state.world, e);
 
   if (p.alive && e.contactCd <= 0 && dP < e.radius + p.radius && onScreen(state, e.x, e.y)) {
     hurtPlayer(state, e.touch);
@@ -142,6 +142,7 @@ function onDeath(state, e) {
   shout(state, e.x, e.y, 'hurt');
   if (e.type === ENEMY.SHOVEL && state.rng.chance(0.6)) throwSprite(state, e.x, e.y, 'pants', {});
   shake(state, 4);
+  dropLoot(state, e);
 }
 
 export function updateEnemies(state, dt) {
@@ -162,6 +163,9 @@ export function updateEnemies(state, dt) {
     }
   }
 
+  // Separation can shove a crowd into a wall — keep everyone inside the room.
+  for (let i = 0; i < en.length; i++) if (en[i].alive) clampInside(state.world, en[i]);
+
   for (let i = en.length - 1; i >= 0; i--) {
     if (!en[i].alive) { onDeath(state, en[i]); en[i] = en[en.length - 1]; en.pop(); }
   }
@@ -170,7 +174,7 @@ export function updateEnemies(state, dt) {
 export function drawEnemy(R, state, e) {
   const sq = e.squash;
   const grow = e.spawnT > 0 ? 0.4 + (1 - e.spawnT / 0.3) * 0.6 : 1;
-  const sx = (1 + sq * 0.25) * grow, sy = (1 - sq * 0.2) * grow;
+  const sx = (1 + sq * 0.25) * grow * CHAR_SCALE, sy = (1 - sq * 0.2) * grow * CHAR_SCALE;
   const flashing = e.hurtT > 0;
   const tint = flashing ? { r: 1, g: 0.6, b: 0.6 } : {};
   R.draw(e.def.sprite, e.x, e.y, { rot: e.face, sx, sy, r: tint.r, g: tint.g, b: tint.b });

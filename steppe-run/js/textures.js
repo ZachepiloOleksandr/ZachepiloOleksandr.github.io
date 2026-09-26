@@ -5,26 +5,62 @@ import { PALETTE as P, ALL_PHRASES } from './data.js';
 
 const rgba = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
+// Sprites are baked at SS× resolution (sizes below stay in world px), so they stay crisp when
+// the camera zooms them up on high-DPI phones.
+const SS = 2;
+const ATLAS_W = 2048, ATLAS_H = 1024;
+const OUTLINE = 1.6; // world px, ink outline around characters/props
+
 export function buildAtlas() {
   const cv = document.createElement('canvas');
-  cv.width = 1024;
-  cv.height = 1024;
+  cv.width = ATLAS_W;
+  cv.height = ATLAS_H;
   const ctx = cv.getContext('2d');
   const frames = {};
-  const PAD = 2;
+  const PAD = 4;
   let cx = 0, cy = 0, rowH = 0;
 
-  function place(name, w, h, draw) {
+  function alloc(name, w, h) {
     w = Math.ceil(w); h = Math.ceil(h);
-    if (cx + w + PAD > cv.width) { cx = 0; cy += rowH + PAD; rowH = 0; }
-    const x = cx, y = cy;
+    const pw = w * SS, ph = h * SS;
+    if (cx + pw + PAD > cv.width) { cx = 0; cy += rowH + PAD; rowH = 0; }
+    if (cy + ph > cv.height) console.error('ATLAS overflow at ' + name);
+    const f = { x: cx, y: cy, w: pw, h: ph, lw: w, lh: h };
+    frames[name] = f;
+    cx += pw + PAD;
+    rowH = Math.max(rowH, ph);
+    return f;
+  }
+
+  function place(name, w, h, draw) {
+    const f = alloc(name, w, h);
     ctx.save();
-    ctx.translate(x, y);
-    draw(ctx, w, h);
+    ctx.translate(f.x, f.y);
+    ctx.beginPath(); ctx.rect(0, 0, f.w, f.h); ctx.clip(); // never bleed into neighbouring frames
+    ctx.scale(SS, SS);
+    draw(ctx, f.lw, f.lh);
     ctx.restore();
-    frames[name] = { x, y, w, h };
-    cx += w + PAD;
-    rowH = Math.max(rowH, h);
+  }
+
+  // Cartoon ink outline: bake the sprite off-screen, stamp its silhouette in ink around it, then the sprite.
+  const tmp = document.createElement('canvas');
+  const tctx = tmp.getContext('2d');
+  const sil = document.createElement('canvas');
+  const sctx = sil.getContext('2d');
+  function placeOutlined(name, w, h, draw) {
+    const f = alloc(name, w, h);
+    tmp.width = sil.width = f.w; tmp.height = sil.height = f.h;
+    tctx.save(); tctx.scale(SS, SS); draw(tctx, f.lw, f.lh); tctx.restore();
+    sctx.drawImage(tmp, 0, 0);
+    sctx.globalCompositeOperation = 'source-in';
+    sctx.fillStyle = rgba(P.ink, 0.9); sctx.fillRect(0, 0, f.w, f.h);
+    sctx.globalCompositeOperation = 'source-over';
+    const o = OUTLINE * SS;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.drawImage(sil, f.x + Math.cos(a) * o, f.y + Math.sin(a) * o);
+    }
+    ctx.drawImage(tmp, f.x, f.y);
   }
 
   // ---- primitives ----
@@ -57,13 +93,71 @@ export function buildAtlas() {
       c.fillRect(rx, ry, 2 + (i % 3), 2 + (i % 2));
     }
   }
-  place('grass1', 64, 64, (c, w, h) => speckle(c, w, h, P.grass1, 60, [P.grass2, P.grass3, P.kovyla]));
-  place('grass2', 64, 64, (c, w, h) => speckle(c, w, h, P.grass2, 60, [P.grass1, P.grass3]));
-  place('grass3', 64, 64, (c, w, h) => speckle(c, w, h, P.grass3, 60, [P.grass1, P.grass2]));
-  place('dirt', 64, 64, (c, w, h) => {
-    speckle(c, w, h, P.dirt, 40, [P.dirtDk]);
-    c.strokeStyle = rgba(P.dirtDk, 0.4); c.lineWidth = 2;
-    for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(0, i * 16 + 6); c.bezierCurveTo(20, i * 16, 44, i * 16 + 14, 64, i * 16 + 4); c.stroke(); }
+  // Seamless steppe ground: every mark is drawn at wrapped offsets so tiles join invisibly.
+  function ground(c, w, h, seed) {
+    c.fillStyle = rgba(P.grass1); c.fillRect(0, 0, w, h);
+    let s = seed;
+    const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    const wrap = (fn) => { for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) fn(ox, oy); };
+    for (let i = 0; i < 14; i++) {          // soft tonal blotches
+      const x = rnd() * w, y = rnd() * h, r = 14 + rnd() * 26;
+      const col = rnd() < 0.5 ? P.grass2 : P.grass3;
+      wrap((ox, oy) => {
+        const g = c.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        g.addColorStop(0, rgba(col, 0.45)); g.addColorStop(1, rgba(col, 0));
+        c.fillStyle = g; c.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+      });
+    }
+    c.lineCap = 'round';
+    for (let i = 0; i < 90; i++) {          // grass blades
+      const x = rnd() * w, y = rnd() * h, len = 3 + rnd() * 5, a = -Math.PI / 2 + (rnd() - 0.5) * 1.1;
+      const col = [P.grass3, P.bush, P.grass2, P.kovyla][i % 4];
+      c.strokeStyle = rgba(col, 0.55); c.lineWidth = 1 + rnd() * 0.8;
+      wrap((ox, oy) => { c.beginPath(); c.moveTo(x + ox, y + oy); c.lineTo(x + ox + Math.cos(a) * len, y + oy + Math.sin(a) * len); c.stroke(); });
+    }
+    for (let i = 0; i < 26; i++) {          // pebbles / dry specks
+      const x = rnd() * w, y = rnd() * h, r = 0.6 + rnd() * 1.2;
+      c.fillStyle = rgba(i % 2 ? P.dirtDk : P.kovyla, 0.45);
+      wrap((ox, oy) => { c.beginPath(); c.arc(x + ox, y + oy, r, 0, 7); c.fill(); });
+    }
+  }
+  place('ground', 128, 128, (c, w, h) => ground(c, w, h, 1234567));
+
+  // Soft-edged patches laid over the ground for large-scale variety (tinted per use).
+  place('patch', 96, 96, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.55, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  place('dirt', 128, 96, (c, w, h) => {
+    c.save();
+    c.beginPath();
+    for (let i = 0; i <= 24; i++) {
+      const a = (i / 24) * Math.PI * 2, r = 1 + Math.sin(a * 3 + 1) * 0.08 + Math.sin(a * 7) * 0.05;
+      c.lineTo(w / 2 + Math.cos(a) * (w / 2 - 6) * r, h / 2 + Math.sin(a) * (h / 2 - 6) * r);
+    }
+    c.closePath(); c.clip();
+    speckle(c, w, h, P.dirt, 70, [P.dirtDk, P.kovyla]);
+    c.strokeStyle = rgba(P.dirtDk, 0.35); c.lineWidth = 2;
+    for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(0, i * 16 + 6); c.bezierCurveTo(w * 0.3, i * 16, w * 0.7, i * 16 + 14, w, i * 16 + 4); c.stroke(); }
+    const g = c.createRadialGradient(w / 2, h / 2, w * 0.2, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, rgba(P.grass1, 0.85));
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.restore();
+  });
+
+  // Screen vignette (drawn last, stretched over the view).
+  place('vignette', 64, 64, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, w * 0.28, w / 2, h / 2, w * 0.72);
+    g.addColorStop(0, 'rgba(40,24,8,0)'); g.addColorStop(1, 'rgba(40,24,8,0.42)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+
+  // Inner-wall ambient shadow strip (dark at the wall, fading into the room).
+  place('wallShade', 8, 32, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(30,18,6,0.45)'); g.addColorStop(1, 'rgba(30,18,6,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
   });
 
   // ---- decorations ----
@@ -87,7 +181,7 @@ export function buildAtlas() {
     for (const [ox, oy] of [[-8, -10], [6, -12], [0, -16]]) { c.beginPath(); c.ellipse(w / 2 + ox, h * 0.6 + oy, 6, 5, 0, 0, 7); c.fill(); }
   });
 
-  place('wreck', 104, 84, (c, w, h) => {
+  placeOutlined('wreck', 104, 84, (c, w, h) => {
     // abandoned tractor-ish hulk, rusty
     c.fillStyle = rgba(P.metalDk); c.fillRect(20, 30, 64, 34);
     c.fillStyle = rgba(P.metal); c.fillRect(24, 18, 30, 22); // cab
@@ -100,7 +194,7 @@ export function buildAtlas() {
   });
 
   // ---- hero (facing +x) ----
-  place('soldier', 46, 46, (c, w, h) => {
+  placeOutlined('soldier', 46, 46, (c, w, h) => {
     const cxp = w / 2, cyp = h / 2;
     // rifle pointing right
     c.fillStyle = rgba(P.steel); c.fillRect(cxp + 4, cyp - 3, 18, 5);
@@ -118,7 +212,7 @@ export function buildAtlas() {
   });
 
   // ---- enemy: naked & barefoot (facing +x) ----
-  place('naked', 40, 42, (c, w, h) => {
+  placeOutlined('naked', 40, 42, (c, w, h) => {
     const cxp = w / 2, cyp = h / 2;
     // flailing arms
     c.strokeStyle = rgba(P.pinkDk); c.lineWidth = 4; c.lineCap = 'round';
@@ -138,7 +232,7 @@ export function buildAtlas() {
   });
 
   // ---- enemy: armed but hapless (facing +x) ----
-  place('armed', 44, 46, (c, w, h) => {
+  placeOutlined('armed', 44, 46, (c, w, h) => {
     const cxp = w / 2, cyp = h / 2;
     // stick (held, pointing right-ish, wobbly)
     c.strokeStyle = rgba(P.stick); c.lineWidth = 4; c.lineCap = 'round';
@@ -154,7 +248,7 @@ export function buildAtlas() {
   });
 
   // ---- gags & projectiles ----
-  place('pants', 26, 18, (c, w, h) => {
+  placeOutlined('pants', 26, 18, (c, w, h) => {
     c.fillStyle = rgba(P.trunks); c.fillRect(2, 2, w - 4, h - 8);
     c.fillRect(3, h - 8, 8, 7); c.fillRect(w - 11, h - 8, 8, 7);
     c.fillStyle = rgba(P.ink, 0.3); c.fillRect(2, 2, w - 4, 3);
@@ -185,7 +279,7 @@ export function buildAtlas() {
   });
 
   // ---- enemy: pistol (facing +x) ----
-  place('pistol', 44, 44, (c, w, h) => {
+  placeOutlined('pistol', 44, 44, (c, w, h) => {
     const cx = w / 2, cy = h / 2;
     c.fillStyle = rgba(P.steel); c.fillRect(cx + 6, cy - 2, 12, 5);
     c.fillStyle = rgba(P.ink); c.fillRect(cx + 15, cy - 1, 3, 6);
@@ -197,7 +291,7 @@ export function buildAtlas() {
   });
 
   // ---- enemy: automatic rifle (facing +x) ----
-  place('rifle', 50, 46, (c, w, h) => {
+  placeOutlined('rifle', 50, 46, (c, w, h) => {
     const cx = w / 2, cy = h / 2;
     c.fillStyle = rgba(P.stick); c.fillRect(cx - 2, cy + 1, 9, 4); // stock
     c.fillStyle = rgba(P.steel); c.fillRect(cx + 4, cy - 3, 22, 5);
@@ -210,7 +304,7 @@ export function buildAtlas() {
   });
 
   // ---- thrown shovel ----
-  place('shovel', 36, 16, (c, w, h) => {
+  placeOutlined('shovel', 36, 16, (c, w, h) => {
     c.strokeStyle = rgba(P.stick); c.lineWidth = 4; c.lineCap = 'round';
     c.beginPath(); c.moveTo(4, h / 2); c.lineTo(w - 13, h / 2); c.stroke();
     c.fillStyle = rgba(P.metal); c.beginPath(); c.moveTo(w - 14, 2); c.lineTo(w - 1, h / 2); c.lineTo(w - 14, h - 2); c.closePath(); c.fill();
@@ -218,18 +312,33 @@ export function buildAtlas() {
   });
 
   // ---- cover that blocks bullets ----
-  place('crate', 50, 50, (c, w, h) => {
+  placeOutlined('crate', 50, 50, (c, w, h) => {
     c.fillStyle = rgba(P.dirtDk); c.fillRect(3, 3, w - 6, h - 6);
     c.fillStyle = rgba(P.stick); c.fillRect(5, 5, w - 10, h - 10);
     c.strokeStyle = rgba(P.dirtDk); c.lineWidth = 3; c.strokeRect(6, 6, w - 12, h - 12);
     c.beginPath(); c.moveTo(7, 7); c.lineTo(w - 7, h - 7); c.moveTo(w - 7, 7); c.lineTo(7, h - 7); c.stroke();
   });
 
-  place('haybale', 56, 48, (c, w, h) => {
+  placeOutlined('haybale', 56, 48, (c, w, h) => {
     c.fillStyle = rgba(P.grass1); c.beginPath(); c.ellipse(w / 2, h / 2, 26, 22, 0, 0, 7); c.fill();
     c.fillStyle = rgba(P.grass2); c.beginPath(); c.ellipse(w / 2, h / 2, 26, 22, 0, 0, 7); c.fill();
     c.strokeStyle = rgba(P.dirtDk, 0.5); c.lineWidth = 2;
     for (let i = 1; i <= 4; i++) { c.beginPath(); c.ellipse(w / 2, h / 2, i * 5, 22, 0, 0, 7); c.stroke(); }
+  });
+
+  // ---- loot ----
+  placeOutlined('coin', 20, 20, (c, w, h) => {
+    const g = c.createRadialGradient(w * 0.38, h * 0.35, 1, w / 2, h / 2, w / 2 - 2);
+    g.addColorStop(0, '#fff3b0'); g.addColorStop(0.5, '#f2c14e'); g.addColorStop(1, '#b8862a');
+    c.fillStyle = g; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 2, 0, 7); c.fill();
+    c.strokeStyle = 'rgba(120,80,20,0.8)'; c.lineWidth = 1.2; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 4.5, 0, 7); c.stroke();
+    c.fillStyle = '#8a5a14'; c.font = '900 10px "Trebuchet MS", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('₴', w / 2, h / 2 + 0.5);
+  });
+  placeOutlined('medkit', 24, 20, (c, w, h) => {
+    c.fillStyle = '#f4f0e6'; c.beginPath(); c.roundRect ? c.roundRect(2, 3, w - 4, h - 5, 3) : c.rect(2, 3, w - 4, h - 5); c.fill();
+    c.fillStyle = '#d23a32'; c.fillRect(w / 2 - 2, 6, 4, h - 11); c.fillRect(w / 2 - 6, h / 2 - 1.5, 12, 4);
+    c.fillStyle = 'rgba(0,0,0,0.15)'; c.fillRect(2, h - 5, w - 4, 3);
   });
 
   // ---- room wall tile (brick rampart) ----
@@ -242,16 +351,6 @@ export function buildAtlas() {
     }
     c.strokeStyle = rgba(P.ink, 0.28); c.lineWidth = 2;
     for (let r = 0; r <= 4; r++) { c.beginPath(); c.moveTo(0, r * 16); c.lineTo(w, r * 16); c.stroke(); }
-  });
-
-  // ---- exit arrow (points up; rotated per side) ----
-  place('arrow', 40, 40, (c, w, h) => {
-    c.fillStyle = rgba(P.muzzle);
-    c.beginPath();
-    c.moveTo(w / 2, 5); c.lineTo(w - 7, h * 0.5); c.lineTo(w / 2 + 8, h * 0.5);
-    c.lineTo(w / 2 + 8, h - 6); c.lineTo(w / 2 - 8, h - 6); c.lineTo(w / 2 - 8, h * 0.5);
-    c.lineTo(7, h * 0.5); c.closePath(); c.fill();
-    c.strokeStyle = rgba(P.ink, 0.5); c.lineWidth = 2; c.stroke();
   });
 
   // ---- text: digits + phrases ----

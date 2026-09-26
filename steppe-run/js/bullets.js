@@ -95,7 +95,7 @@ export function updateBullets(state, dt) {
     b.y += b.vy * dt;
     let dead = b.life <= 0 || b.x < -40 || b.y < -40 || b.x > w.w + 40 || b.y > w.h + 40;
 
-    // Walls, the closed door and cover stop bullets (no shooting through them).
+    // Walls and cover stop bullets (no shooting through them).
     if (!dead && pointSolidHit(w, b.x, b.y)) dead = true;
 
     if (!dead) {

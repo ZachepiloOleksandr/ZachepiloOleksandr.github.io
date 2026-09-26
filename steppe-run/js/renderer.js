@@ -83,7 +83,7 @@ export function createRenderer(gl, atlas) {
     uv[name] = {
       u0: f.x / AW + ix, v0: f.y / AH + iy,
       u1: (f.x + f.w) / AW - ix, v1: (f.y + f.h) / AH - iy,
-      w: f.w, h: f.h,
+      w: f.lw, h: f.lh,
     };
   }
 

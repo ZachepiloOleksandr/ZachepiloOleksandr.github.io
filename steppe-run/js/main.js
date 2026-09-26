@@ -6,13 +6,15 @@ import { createAudio } from './audio.js';
 import { createHud } from './hud.js';
 import { makeRng } from './rng.js';
 import { clamp, lerp, jitter } from './math.js';
-import { generateRoom, drawRoom, exitReached, placePlayerAtEntry } from './world.js';
+import { generateRoom, drawRoom, placePlayerAtEntry } from './world.js';
 import { createPlayer, updatePlayer, drawPlayer } from './player.js';
 import { updatePlayerFire, updateBullets, drawBullets } from './bullets.js';
 import { updateEnemies, drawEnemy } from './enemies.js';
 import { startRun, startWave, updateWaves } from './waves.js';
 import { updateFx, drawParticles, drawFloaters } from './fx.js';
-import { PERKS } from './data.js';
+import { PERKS, LOOT } from './data.js';
+import { loadBank, saveBank, applyUpgrades } from './meta.js';
+import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
 
 const TARGET_VIEW_H = 820; // world px visible vertically (zoom level) — device-independent
 const BEST_KEY = 'steppe.best';
@@ -44,12 +46,13 @@ function main() {
     zoom: 1, view: { halfW: 420, halfH: 420 },
     cam: { x: 0, y: 0, shake: 0, sx: 0, sy: 0 },
     world: null, player: null,
-    enemies: [], bullets: [], fx: { particles: [], floaters: [] },
-    stats: { kills: 0 },
+    enemies: [], bullets: [], pickups: [], fx: { particles: [], floaters: [] },
+    stats: { kills: 0, coins: 0 },
+    bank: loadBank(), clearT: 0,
     wave: { index: 0, phase: 'idle', queue: [], introT: 0, spawnCd: 0 },
     best: loadBest(),
     onBanner: (t) => hud.banner(t),
-    onWaveCleared: () => enterPerk(),
+    onWaveCleared: () => { vacuumPickups(state); state.clearT = LOOT.vacuumDelay; },
   };
 
   // Fixed zoom (the "as before" close-up). Rooms are generated to match this viewport,
@@ -86,6 +89,7 @@ function main() {
   function resetEntities() {
     state.enemies.length = 0;
     state.bullets.length = 0;
+    state.pickups.length = 0;
     state.fx.particles.length = 0;
     state.fx.floaters.length = 0;
   }
@@ -98,7 +102,7 @@ function main() {
     resetEntities();
     state.cam.x = state.player.x; state.cam.y = state.player.y; state.cam.shake = 0;
     state.status = 'menu';
-    hud.showMenu(state.best);
+    hud.showMenu(state.best, state.bank);
   }
 
   function newRun() {
@@ -106,13 +110,18 @@ function main() {
     state.rng = makeRng((Math.random() * 0x7fffffff) >>> 0);
     generateRoom(state, 1);
     createPlayer(state);
+    applyUpgrades(state.bank, state.player);
     placePlayerAtEntry(state);
     resetEntities();
     state.cam.x = state.player.x; state.cam.y = state.player.y; state.cam.shake = 0;
     state.stats.kills = 0;
+    state.stats.coins = 0;
+    state.clearT = 0;
+    console.log('RUN start | bank ' + state.bank.coins + ' ₴ | up ' + JSON.stringify(state.bank.up));
     input.reset();
-    hud.setHP(100, 100);
+    hud.setHP(state.player.hp, state.player.maxHp);
     hud.setKills(0);
+    hud.setCoins(0);
     hud.showGame();
     state.status = 'playing';
     startRun(state);
@@ -120,6 +129,7 @@ function main() {
 
   function enterPerk() {
     state.status = 'perk';
+    saveBank(state.bank);
     const pool = PERKS.slice();
     for (let i = pool.length - 1; i > 0; i--) {
       const j = state.rng.int(0, i);
@@ -130,10 +140,7 @@ function main() {
       pk.apply(state.player);
       A.perk();
       hud.setHP(state.player.hp, state.player.maxHp);
-      // Open the gate; player must walk to it to advance to the next room.
-      if (state.world.door) state.world.door.open = true;
-      hud.banner('Вихід відчинено! →', 1800);
-      state.status = 'playing';
+      startTransition();
     });
   }
 
@@ -149,6 +156,7 @@ function main() {
       generateRoom(state, next);
       placePlayerAtEntry(state);
       state.bullets.length = 0;
+      state.pickups.length = 0;
       state.fx.particles.length = 0;
       state.cam.x = state.player.x; state.cam.y = state.player.y; state.cam.shake = 0;
       startWave(state, next);
@@ -164,11 +172,18 @@ function main() {
     if (state.wave.index > state.best.wave) state.best.wave = state.wave.index;
     if (state.stats.kills > state.best.kills) state.best.kills = state.stats.kills;
     saveBest(state.best);
-    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, best: state.best });
+    saveBank(state.bank);
+    console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.coins + ' ₴ | bank ' + state.bank.coins);
+    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, coins: state.stats.coins, bank: state.bank.coins, best: state.best });
   }
 
   hud.onStart = newRun;
   hud.onRetry = newRun;
+  hud.onMenu = menuScene;
+  hud.bank = state.bank;
+  hud.onBankChange = () => saveBank(state.bank);
+  // Coins are credited to the bank on pickup; persist if the app is backgrounded/closed mid-run.
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveBank(state.bank); });
 
   function updateCamera(dt) {
     const p = state.player, cam = state.cam, w = state.world;
@@ -194,11 +209,15 @@ function main() {
       updateEnemies(state, dt);
       updateBullets(state, dt);
       updateWaves(state, dt);
+      updatePickups(state, dt);
       hud.setHP(state.player.hp, state.player.maxHp);
       hud.setKills(state.stats.kills);
+      hud.setCoins(state.stats.coins);
       if (!state.player.alive) die();
-      else if (state.world.door && state.world.door.open && state.enemies.length === 0 &&
-               exitReached(state.world, state.player)) startTransition();
+      else if (state.clearT > 0) {
+        state.clearT -= dt;
+        if (state.clearT <= 0 || state.pickups.length === 0) { state.clearT = 0; enterPerk(); }
+      }
     }
     updateFx(state, dt);
     updateCamera(dt);
@@ -243,8 +262,10 @@ function main() {
       else drawDeco(it);
     }
 
+    drawPickups(R, state);
     drawBullets(R, state);
     drawParticles(R, state);
+    R.draw('vignette', cam.x + cam.sx, cam.y + cam.sy, { w: state.view.halfW * 2 + 4, h: state.view.halfH * 2 + 4 });
     drawFloaters(R, state);
     R.flush();
   }

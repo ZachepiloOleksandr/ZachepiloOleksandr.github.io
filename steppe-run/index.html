@@ -33,6 +33,7 @@
         <div id="stats">
           <span id="waveLabel">Хвиля 1</span>
           <span id="killLabel">☠ 0</span>
+          <span id="coinLabel">₴ 0</span>
         </div>
       </div>
       <div id="banner" class="hidden"></div>
@@ -49,6 +50,7 @@
       <h1>СТЕПОВИЙ<br/>ЗАБІГ</h1>
       <p class="sub">Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?</p>
       <button id="startBtn" class="btn">ПОЧАТИ ЗАБІГ</button>
+      <button id="shopBtn" class="btn btn2">АРСЕНАЛ · <span id="menuBank">0</span> ₴</button>
       <p class="best" id="menuBest"></p>
       <p class="hint">Тягни пальцем будь-де ліворуч/знизу — стрільба автоматична.</p>
     </div>
@@ -65,11 +67,20 @@
       <h2>ЗАБІГ ЗАВЕРШЕНО</h2>
       <div id="deathStats"></div>
       <button id="retryBtn" class="btn">НОВИЙ ЗАБІГ</button>
+      <button id="toMenuBtn" class="btn btn2">В МЕНЮ · АРСЕНАЛ</button>
+    </div>
+
+    <!-- Meta shop: permanent upgrades for banked coins -->
+    <div id="shop" class="overlay hidden">
+      <h2>АРСЕНАЛ</h2>
+      <p class="sub">Скарбничка: <b id="shopBank">0</b> ₴<br/><small>Трофеї з ворогів зберігаються між забігами</small></p>
+      <div id="shopCards"></div>
+      <button id="shopBack" class="btn btn2">НАЗАД</button>
     </div>
   </div>
 
   <script src="js/devlog.js"></script>
   <script type="module" src="js/main.js"></script>
-  <script>if ('serviceWorker' in navigator) { addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }</script>
+  <script>if ('serviceWorker' in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }</script>
 </body>
 </html>

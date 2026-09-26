@@ -1,5 +1,8 @@
 // Content & tuning constants: palette, comic lines, perks, enemy defs, wave plan.
 
+// Characters are drawn this much larger than their sprite so the art matches the hitbox.
+export const CHAR_SCALE = 1.25;
+
 // Warm Ukrainian-steppe palette. RGB 0..255 — consumed by the procedural texture baker.
 export const PALETTE = {
   grass1: [201, 178, 78],   // golden field
@@ -50,7 +53,7 @@ export const SHOUTS = {
 
 // All distinct strings the texture baker must pre-render into the atlas as sprites.
 export const ALL_PHRASES = [
-  ...new Set([].concat(SHOUTS.naked, SHOUTS.armed, SHOUTS.rifle, SHOUTS.shovel, SHOUTS.friendly, SHOUTS.hurt, SHOUTS.trip)),
+  ...new Set([].concat(SHOUTS.naked, SHOUTS.armed, SHOUTS.rifle, SHOUTS.shovel, SHOUTS.friendly, SHOUTS.hurt, SHOUTS.trip, ['+HP'])),
 ];
 
 // Roguelike run upgrades. apply() mutates the player stat block in place.
@@ -61,8 +64,30 @@ export const PERKS = [
   { id: 'shotgun',  icon: '🌽', name: 'Качан дробу',       desc: '+1 куля віялом',    apply: (p) => { p.multishot += 1; } },
   { id: 'range',    icon: '🎯', name: 'Далекобій',         desc: '+20% дальність',    apply: (p) => { p.range *= 1.2; p.bulletSpeed *= 1.1; } },
   { id: 'pierce',   icon: '🔩', name: 'Бронебійні',        desc: 'куля б\'є +1 ворога', apply: (p) => { p.pierce += 1; } },
-  { id: 'heal',     icon: '🥓', name: 'Сало (аптечка)',    desc: '+20 макс. HP, лікує', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
+  { id: 'heal',     icon: '🩹', name: 'Аптечка',           desc: '+20 макс. HP, лікує', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
 ];
+
+// Loot dropped by enemies. Coins (₴) persist between runs in the bank; medkits heal on the spot.
+export const LOOT = {
+  medkitChance: 0.05,
+  medkitHeal: 20,
+  magnetR: 95,        // pull radius (world px), before upgrades
+  pickupR: 26,        // collect distance
+  pullSpeed: 520,
+  life: 14,           // seconds on the ground before vanishing
+  vacuumDelay: 1.1,   // after a wave clears: time for leftovers to fly in before the perk screen
+};
+
+// Permanent upgrades bought with banked coins in the menu shop. lvl 0..max.
+export const UPGRADES = [
+  { id: 'hp',     icon: '❤️', name: 'Загартування', desc: '+12 макс. HP',        max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
+  { id: 'dmg',    icon: '💥', name: 'Набої',        desc: '+8% шкоди',           max: 5, base: 25, apply: (p, l) => { p.damage *= 1 + 0.08 * l; } },
+  { id: 'rate',   icon: '🔥', name: 'Затвор',       desc: '+7% темп стрільби',   max: 5, base: 25, apply: (p, l) => { p.fireRate *= 1 + 0.07 * l; } },
+  { id: 'speed',  icon: '👟', name: 'Берці',        desc: '+5% швидкості',       max: 5, base: 20, apply: (p, l) => { p.speed *= 1 + 0.05 * l; } },
+  { id: 'magnet', icon: '🧲', name: 'Кишені',       desc: '+30% радіус збору',   max: 3, base: 15, apply: (p, l) => { p.magnetR *= 1 + 0.3 * l; } },
+];
+
+export function upgradeCost(u, lvl) { return Math.round(u.base * Math.pow(lvl + 1, 1.5)); }
 
 // Enemy archetypes. Escalating "competence", escalating farce.
 export const ENEMY = { SHOVEL: 0, PISTOL: 1, RIFLE: 2 };
@@ -71,6 +96,7 @@ export const ENEMY = { SHOVEL: 0, PISTOL: 1, RIFLE: 2 };
 export const ENEMY_DEFS = {
   [ENEMY.SHOVEL]: {
     hp: 18, speed: 126, radius: 16, touch: 8, score: 1,
+    coinChance: 0.6, coinValue: 1,
     weapon: 'melee',
     stumbleChance: 0.85, panicChance: 0.4,
     throwInterval: 2.6,   // occasionally flings a shovel
@@ -78,6 +104,7 @@ export const ENEMY_DEFS = {
   },
   [ENEMY.PISTOL]: {
     hp: 40, speed: 92, radius: 18, touch: 8, score: 3,
+    coinChance: 0.9, coinValue: 2,
     weapon: 'pistol',
     stumbleChance: 0.3,
     shootInterval: 1.7, accuracy: 0.4, bulletDmg: 8, bulletSpeed: 360,
@@ -85,6 +112,7 @@ export const ENEMY_DEFS = {
   },
   [ENEMY.RIFLE]: {
     hp: 64, speed: 72, radius: 19, touch: 10, score: 5,
+    coinChance: 1, coinValue: 3,
     weapon: 'auto',
     stumbleChance: 0.2,
     shootInterval: 2.3, accuracy: 0.5, bulletDmg: 6, bulletSpeed: 420,
