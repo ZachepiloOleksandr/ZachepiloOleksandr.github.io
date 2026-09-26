@@ -278,7 +278,7 @@ html, body {
   padding: 13px 26px;
 }
 .btn2:active { box-shadow: 0 2px 0 #3e2c12, 0 4px 10px rgba(0,0,0,0.45); }
-#coinLabel { color: #ffd75e !important; }
+#ebLabel { color: #ffd75e !important; }
 #shopCards { display: flex; flex-direction: column; gap: 10px; width: min(92vw, 440px); max-height: 58vh; overflow-y: auto; }
 .shopCard { padding: 12px 14px; }
 .shopCard .txt { flex: 1; text-align: left; }

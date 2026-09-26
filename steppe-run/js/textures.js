@@ -1,7 +1,7 @@
 // Procedural texture atlas baked on a 2D canvas, then uploaded to GL as one texture.
 // No binary assets — every sprite is drawn here. Characters are drawn facing +x (right)
 // so the renderer can rotate them straight to their aim/move angle.
-import { PALETTE as P, ALL_PHRASES } from './data.js';
+import { PALETTE as P, ALL_PHRASES, EB } from './data.js';
 
 const rgba = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
@@ -327,14 +327,6 @@ export function buildAtlas() {
   });
 
   // ---- loot ----
-  placeOutlined('coin', 20, 20, (c, w, h) => {
-    const g = c.createRadialGradient(w * 0.38, h * 0.35, 1, w / 2, h / 2, w / 2 - 2);
-    g.addColorStop(0, '#fff3b0'); g.addColorStop(0.5, '#f2c14e'); g.addColorStop(1, '#b8862a');
-    c.fillStyle = g; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 2, 0, 7); c.fill();
-    c.strokeStyle = 'rgba(120,80,20,0.8)'; c.lineWidth = 1.2; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 4.5, 0, 7); c.stroke();
-    c.fillStyle = '#8a5a14'; c.font = '900 10px "Trebuchet MS", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText('₴', w / 2, h / 2 + 0.5);
-  });
   placeOutlined('medkit', 24, 20, (c, w, h) => {
     c.fillStyle = '#f4f0e6'; c.beginPath(); c.roundRect ? c.roundRect(2, 3, w - 4, h - 5, 3) : c.rect(2, 3, w - 4, h - 5); c.fill();
     c.fillStyle = '#d23a32'; c.fillRect(w / 2 - 2, 6, 4, h - 11); c.fillRect(w / 2 - 6, h / 2 - 1.5, 12, 4);
@@ -376,6 +368,8 @@ export function buildAtlas() {
 
   for (let d = 0; d <= 9; d++) bakeText('d' + d, String(d), { size: 26, fill: '#fff' });
   bakeText('dminus', '-', { size: 26, fill: '#fff' });
+  bakeText('dplus', '+', { size: 26, fill: '#fff' });
+  bakeText('deb', ' ' + EB, { size: 26, fill: '#fff' });
   ALL_PHRASES.forEach((s, i) => bakeText('t' + i, s, { size: 28 }));
 
   // Map phrase string -> baked frame name for lookup by callers.

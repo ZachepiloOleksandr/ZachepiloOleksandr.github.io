@@ -19,6 +19,7 @@ export function createPlayer(state) {
     multishot: 0,    // extra pellets beyond the first
     pierce: 0,
     magnetR: LOOT.magnetR,
+    ebalyBonus: 0,   // extra єБали per kill (Арсенал upgrade)
     aim: 0,
     walk: 0,
     hurtT: 0,

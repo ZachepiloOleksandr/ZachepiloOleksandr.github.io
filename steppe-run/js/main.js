@@ -12,7 +12,7 @@ import { updatePlayerFire, updateBullets, drawBullets } from './bullets.js';
 import { updateEnemies, drawEnemy } from './enemies.js';
 import { startRun, startWave, updateWaves } from './waves.js';
 import { updateFx, drawParticles, drawFloaters } from './fx.js';
-import { PERKS, LOOT } from './data.js';
+import { PERKS, LOOT, EB } from './data.js';
 import { loadBank, saveBank, applyUpgrades } from './meta.js';
 import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
 
@@ -47,7 +47,7 @@ function main() {
     cam: { x: 0, y: 0, shake: 0, sx: 0, sy: 0 },
     world: null, player: null,
     enemies: [], bullets: [], pickups: [], fx: { particles: [], floaters: [] },
-    stats: { kills: 0, coins: 0 },
+    stats: { kills: 0, ebaly: 0 },
     bank: loadBank(), clearT: 0,
     wave: { index: 0, phase: 'idle', queue: [], introT: 0, spawnCd: 0 },
     best: loadBest(),
@@ -115,13 +115,13 @@ function main() {
     resetEntities();
     state.cam.x = state.player.x; state.cam.y = state.player.y; state.cam.shake = 0;
     state.stats.kills = 0;
-    state.stats.coins = 0;
+    state.stats.ebaly = 0;
     state.clearT = 0;
-    console.log('RUN start | bank ' + state.bank.coins + ' ₴ | up ' + JSON.stringify(state.bank.up));
+    console.log('RUN start | bank ' + state.bank.ebaly + ' ' + EB + ' | up ' + JSON.stringify(state.bank.up));
     input.reset();
     hud.setHP(state.player.hp, state.player.maxHp);
     hud.setKills(0);
-    hud.setCoins(0);
+    hud.setEbaly(0);
     hud.showGame();
     state.status = 'playing';
     startRun(state);
@@ -173,8 +173,8 @@ function main() {
     if (state.stats.kills > state.best.kills) state.best.kills = state.stats.kills;
     saveBest(state.best);
     saveBank(state.bank);
-    console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.coins + ' ₴ | bank ' + state.bank.coins);
-    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, coins: state.stats.coins, bank: state.bank.coins, best: state.best });
+    console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.ebaly + ' ' + EB + ' | bank ' + state.bank.ebaly);
+    hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, bank: state.bank.ebaly, best: state.best });
   }
 
   hud.onStart = newRun;
@@ -182,7 +182,7 @@ function main() {
   hud.onMenu = menuScene;
   hud.bank = state.bank;
   hud.onBankChange = () => saveBank(state.bank);
-  // Coins are credited to the bank on pickup; persist if the app is backgrounded/closed mid-run.
+  // єБали are credited to the bank on each kill; persist if the app is backgrounded/closed mid-run.
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveBank(state.bank); });
 
   function updateCamera(dt) {
@@ -212,7 +212,7 @@ function main() {
       updatePickups(state, dt);
       hud.setHP(state.player.hp, state.player.maxHp);
       hud.setKills(state.stats.kills);
-      hud.setCoins(state.stats.coins);
+      hud.setEbaly(state.stats.ebaly);
       if (!state.player.alive) die();
       else if (state.clearT > 0) {
         state.clearT -= dt;

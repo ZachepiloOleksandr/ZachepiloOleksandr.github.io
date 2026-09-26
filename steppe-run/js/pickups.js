@@ -1,12 +1,10 @@
-// Loot on the ground: coins (banked between runs) and medkits (instant heal).
+// Loot on the ground: medkits (instant heal).
 // Magnetised toward the player; after a wave clears everything left is vacuumed in.
-import { LOOT, PALETTE as P } from './data.js';
-import { burst, addFloater } from './fx.js';
+import { LOOT } from './data.js';
+import { addFloater } from './fx.js';
 
 export function dropLoot(state, e) {
-  const rng = state.rng, d = e.def;
-  if (rng.chance(d.coinChance)) spawnPickup(state, 'coin', e.x, e.y, d.coinValue);
-  if (rng.chance(LOOT.medkitChance)) spawnPickup(state, 'medkit', e.x, e.y, LOOT.medkitHeal);
+  if (state.rng.chance(LOOT.medkitChance)) spawnPickup(state, 'medkit', e.x, e.y, LOOT.medkitHeal);
 }
 
 function spawnPickup(state, kind, x, y, value) {
@@ -23,19 +21,12 @@ export function vacuumPickups(state) {
 
 function collect(state, k) {
   const p = state.player;
-  if (k.kind === 'coin') {
-    state.stats.coins += k.value;
-    state.bank.coins += k.value;
-    state.A.coin();
-    burst(state, k.x, k.y, { n: 4, color: P.muzzle, speed: 80, size: 7, life: 0.25 });
-  } else {
-    const before = p.hp;
-    p.hp = Math.min(p.maxHp, p.hp + k.value);
-    state.A.perk();
-    const fr = state.atlas.phraseFrame['+HP'];
-    if (fr) addFloater(state, p.x, p.y - 30, fr, { color: [140, 255, 140] });
-    console.log('LOOT medkit +' + Math.round(p.hp - before) + ' HP');
-  }
+  const before = p.hp;
+  p.hp = Math.min(p.maxHp, p.hp + k.value);
+  state.A.perk();
+  const fr = state.atlas.phraseFrame['+HP'];
+  if (fr) addFloater(state, p.x, p.y - 30, fr, { color: [140, 255, 140] });
+  console.log('LOOT medkit +' + Math.round(p.hp - before) + ' HP');
 }
 
 export function updatePickups(state, dt) {
@@ -68,7 +59,6 @@ export function drawPickups(R, state) {
     // Blink during the last 3 seconds before vanishing.
     const a = !k.pulled && k.life < 3 && Math.floor(k.life * 8) % 2 === 0 ? 0.35 : 1;
     R.draw('shadow', k.x, k.y + 9, { w: 18, h: 8, a: 0.35 * a });
-    if (k.kind === 'coin') R.draw('coin', k.x, k.y - 4 + bob, { sx: 0.55 + 0.45 * Math.abs(Math.cos(k.ph * 3)), a });
-    else R.draw('medkit', k.x, k.y - 4 + bob, { a });
+    R.draw('medkit', k.x, k.y - 4 + bob, { a });
   }
 }

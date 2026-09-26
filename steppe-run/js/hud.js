@@ -1,13 +1,13 @@
-import { UPGRADES, upgradeCost } from './data.js';
+import { UPGRADES, upgradeCost, EB } from './data.js';
 import { upgradeLevel, buyUpgrade } from './meta.js';
 
-// DOM overlays: HP/wave/kills/coins, wave banner, menu, perk cards, death screen, meta shop.
+// DOM overlays: HP/wave/kills/єБали, wave banner, menu, perk cards, death screen, meta shop.
 // Buttons call api.onStart / api.onRetry, wired by main.
 export function createHud() {
   const $ = (id) => document.getElementById(id);
   const el = {
     hud: $('hud'), hp: $('hpfill'), hpl: $('hplabel'),
-    wave: $('waveLabel'), kill: $('killLabel'), coin: $('coinLabel'), banner: $('banner'),
+    wave: $('waveLabel'), kill: $('killLabel'), eb: $('ebLabel'), banner: $('banner'),
     menu: $('menu'), menuBest: $('menuBest'), menuBank: $('menuBank'),
     shop: $('shop'), shopBank: $('shopBank'), shopCards: $('shopCards'),
     perks: $('perks'), perkCards: $('perkCards'),
@@ -15,7 +15,7 @@ export function createHud() {
     start: $('startBtn'), retry: $('retryBtn'), stick: $('stick'),
     shopBtn: $('shopBtn'), shopBack: $('shopBack'), toMenu: $('toMenuBtn'),
   };
-  let bannerT = null, lastHp = -1, lastWave = -1, lastKill = -1, lastCoin = -1;
+  let bannerT = null, lastHp = -1, lastWave = -1, lastKill = -1, lastEb = -1;
 
   const api = {
     onStart: null, onRetry: null, onMenu: null, onBankChange: null, bank: null,
@@ -29,7 +29,7 @@ export function createHud() {
     },
     setWave(n) { if (n === lastWave) return; lastWave = n; el.wave.textContent = 'Хвиля ' + n; },
     setKills(k) { if (k === lastKill) return; lastKill = k; el.kill.textContent = '☠ ' + k; },
-    setCoins(c) { if (c === lastCoin) return; lastCoin = c; el.coin.textContent = '₴ ' + c; },
+    setEbaly(n) { if (n === lastEb) return; lastEb = n; el.eb.textContent = n + ' ' + EB; },
 
     banner(text, dur = 1500) {
       el.banner.textContent = text;
@@ -53,7 +53,7 @@ export function createHud() {
       el.menu.classList.remove('hidden');
       el.shop.classList.add('hidden');
       el.death.classList.add('hidden');
-      el.menuBank.textContent = bank ? bank.coins : 0;
+      el.menuBank.textContent = bank ? bank.ebaly : 0;
       el.hud.classList.add('hidden');
       el.stick.classList.add('hidden');
       el.menuBest.textContent = best && best.wave
@@ -79,24 +79,24 @@ export function createHud() {
       el.deathStats.innerHTML =
         `Дійшов до <b>Хвилі ${stats.wave}</b><br/>` +
         `Принижено ворогів: <b>${stats.kills}</b><br/>` +
-        `Трофеї: <b>+${stats.coins} ₴</b> (скарбничка ${stats.bank} ₴)<br/>` +
+        `єБали за кіли: <b>+${stats.ebaly}</b> (всього ${stats.bank} ${EB})<br/>` +
         `Рекорд: <b>Хвиля ${stats.best.wave}</b>`;
     },
   };
 
   function renderShop() {
     const bank = api.bank;
-    el.shopBank.textContent = bank.coins;
-    el.menuBank.textContent = bank.coins;
+    el.shopBank.textContent = bank.ebaly;
+    el.menuBank.textContent = bank.ebaly;
     el.shopCards.innerHTML = '';
     for (const u of UPGRADES) {
       const lvl = upgradeLevel(bank, u.id), maxed = lvl >= u.max;
       const cost = maxed ? 0 : upgradeCost(u, lvl);
       const c = document.createElement('div');
-      c.className = 'perkCard shopCard' + (maxed ? ' maxed' : bank.coins < cost ? ' poor' : '');
+      c.className = 'perkCard shopCard' + (maxed ? ' maxed' : bank.ebaly < cost ? ' poor' : '');
       const pips = '<i class="on"></i>'.repeat(lvl) + '<i></i>'.repeat(u.max - lvl);
       c.innerHTML = `<div class="ic">${u.icon}</div><div class="txt"><h3>${u.name} <span class="pips">${pips}</span></h3><p>${u.desc}</p></div>` +
-        `<div class="price">${maxed ? 'MAX' : cost + ' ₴'}</div>`;
+        `<div class="price">${maxed ? 'MAX' : cost + ' ' + EB}</div>`;
       if (!maxed) c.addEventListener('click', () => {
         if (buyUpgrade(bank, u)) { api.onBankChange && api.onBankChange(); renderShop(); }
         else { c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }

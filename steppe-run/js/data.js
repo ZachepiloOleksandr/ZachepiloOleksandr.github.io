@@ -67,7 +67,10 @@ export const PERKS = [
   { id: 'heal',     icon: '🩹', name: 'Аптечка',           desc: '+20 макс. HP, лікує', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
 ];
 
-// Loot dropped by enemies. Coins (₴) persist between runs in the bank; medkits heal on the spot.
+// єБали: awarded on every kill (per ENEMY_DEFS.ebaly), banked between runs, spent in the Арсенал.
+export const EB = 'єБ';
+
+// Loot dropped by enemies: medkits heal on the spot.
 export const LOOT = {
   medkitChance: 0.05,
   medkitHeal: 20,
@@ -78,13 +81,13 @@ export const LOOT = {
   vacuumDelay: 1.1,   // after a wave clears: time for leftovers to fly in before the perk screen
 };
 
-// Permanent upgrades bought with banked coins in the menu shop. lvl 0..max.
+// Permanent upgrades bought with banked єБали in the menu shop. lvl 0..max.
 export const UPGRADES = [
   { id: 'hp',     icon: '❤️', name: 'Загартування', desc: '+12 макс. HP',        max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
   { id: 'dmg',    icon: '💥', name: 'Набої',        desc: '+8% шкоди',           max: 5, base: 25, apply: (p, l) => { p.damage *= 1 + 0.08 * l; } },
   { id: 'rate',   icon: '🔥', name: 'Затвор',       desc: '+7% темп стрільби',   max: 5, base: 25, apply: (p, l) => { p.fireRate *= 1 + 0.07 * l; } },
   { id: 'speed',  icon: '👟', name: 'Берці',        desc: '+5% швидкості',       max: 5, base: 20, apply: (p, l) => { p.speed *= 1 + 0.05 * l; } },
-  { id: 'magnet', icon: '🧲', name: 'Кишені',       desc: '+30% радіус збору',   max: 3, base: 15, apply: (p, l) => { p.magnetR *= 1 + 0.3 * l; } },
+  { id: 'ebaly',  icon: '📋', name: 'Бойовий облік', desc: '+1 єБал за кожен кіл', max: 3, base: 40, apply: (p, l) => { p.ebalyBonus += l; } },
 ];
 
 export function upgradeCost(u, lvl) { return Math.round(u.base * Math.pow(lvl + 1, 1.5)); }
@@ -96,7 +99,7 @@ export const ENEMY = { SHOVEL: 0, PISTOL: 1, RIFLE: 2 };
 export const ENEMY_DEFS = {
   [ENEMY.SHOVEL]: {
     hp: 18, speed: 126, radius: 16, touch: 8, score: 1,
-    coinChance: 0.6, coinValue: 1,
+    ebaly: 1,
     weapon: 'melee',
     stumbleChance: 0.85, panicChance: 0.4,
     throwInterval: 2.6,   // occasionally flings a shovel
@@ -104,7 +107,7 @@ export const ENEMY_DEFS = {
   },
   [ENEMY.PISTOL]: {
     hp: 40, speed: 92, radius: 18, touch: 8, score: 3,
-    coinChance: 0.9, coinValue: 2,
+    ebaly: 2,
     weapon: 'pistol',
     stumbleChance: 0.3,
     shootInterval: 1.7, accuracy: 0.4, bulletDmg: 8, bulletSpeed: 360,
@@ -112,7 +115,7 @@ export const ENEMY_DEFS = {
   },
   [ENEMY.RIFLE]: {
     hp: 64, speed: 72, radius: 19, touch: 10, score: 5,
-    coinChance: 1, coinValue: 3,
+    ebaly: 3,
     weapon: 'auto',
     stumbleChance: 0.2,
     shootInterval: 2.3, accuracy: 0.5, bulletDmg: 6, bulletSpeed: 420,

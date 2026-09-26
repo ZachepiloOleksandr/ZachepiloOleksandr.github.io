@@ -58,14 +58,25 @@ export function shout(state, x, y, list) {
   if (frame) addFloater(state, x, y - 22, frame, { scale: 0.8, jx: state.rng.range(-6, 6) });
 }
 
+function digitGlyphs(n) {
+  const out = [];
+  for (const ch of String(Math.max(1, Math.round(n)))) out.push('d' + ch);
+  return out;
+}
+
 // Damage number assembled from baked digit glyphs.
 export function addDamage(state, x, y, amount) {
-  const s = String(Math.max(1, Math.round(amount)));
-  const digits = [];
-  for (const ch of s) digits.push('d' + ch);
   state.fx.floaters.push({
-    x, y, vy: -70, life: 0.7, maxLife: 0.7, digits, scale: 0.7,
+    x, y, vy: -70, life: 0.7, maxLife: 0.7, digits: digitGlyphs(amount), scale: 0.7,
     r: 1, g: 0.9, b: 0.5,
+  });
+}
+
+// "+3 єБ" reward popup on a kill.
+export function addEbaly(state, x, y, amount) {
+  state.fx.floaters.push({
+    x, y, vy: -60, life: 1.0, maxLife: 1.0, digits: ['dplus', ...digitGlyphs(amount), 'deb'], scale: 0.8,
+    r: 1, g: 0.84, b: 0.3,
   });
 }
 

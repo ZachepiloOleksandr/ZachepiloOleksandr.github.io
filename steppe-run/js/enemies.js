@@ -4,7 +4,7 @@
 //   RIFLE  — "автоматники" (wave 5+): automatic bursts, sprays wildly, jams.
 import { angleTo, dist, approach } from './math.js';
 import { ENEMY, ENEMY_DEFS, waveScale, PALETTE as P, CHAR_SCALE } from './data.js';
-import { burst, shout, throwSprite, shake } from './fx.js';
+import { burst, shout, throwSprite, shake, addEbaly } from './fx.js';
 import { spawnEnemyBullet, hurtPlayer } from './bullets.js';
 import { resolveCircle, onScreen, clampInside } from './world.js';
 import { dropLoot } from './pickups.js';
@@ -143,6 +143,12 @@ function onDeath(state, e) {
   if (e.type === ENEMY.SHOVEL && state.rng.chance(0.6)) throwSprite(state, e.x, e.y, 'pants', {});
   shake(state, 4);
   dropLoot(state, e);
+  // єБали for the kill — credited straight to the bank so they survive between runs.
+  const eb = e.def.ebaly + state.player.ebalyBonus;
+  state.stats.ebaly += eb;
+  state.bank.ebaly += eb;
+  addEbaly(state, e.x, e.y - e.radius - 18, eb);
+  state.A.ebaly();
 }
 
 export function updateEnemies(state, dt) {
