@@ -263,10 +263,6 @@ ${up('speed', 4, `<g><path d="M102 262 L114 250 L118.5 250 L106.5 262 Z" fill="#
   <!-- arms, hands -->
   ${sleeve('M88 112 L80 146 L127 156')}
   ${sleeve('M172 112 L185 141 L156 126')}
-  <g transform="translate(83.7 130.5) rotate(13)">
-    <rect x="-6" y="-4.5" width="12" height="4.5" fill="#1f5fd1"/><rect x="-6" y="0" width="12" height="4.5" fill="#ffd23f"/>
-    <rect x="-6" y="-4.5" width="12" height="9" fill="none" stroke="${INK}" stroke-width="1.1"/>
-  </g>
   ${up('hp', 5, `<g><ellipse cx="80" cy="146" rx="9.5" ry="8.5" fill="#34391f" ${O}/><ellipse cx="185" cy="141" rx="9.5" ry="8.5" fill="#34391f" ${O}/>
     <ellipse cx="78" cy="143" rx="4.5" ry="2.2" fill="#fff" opacity=".16"/><ellipse cx="183" cy="138" rx="4.5" ry="2.2" fill="#fff" opacity=".16"/></g>`)}
   ${up('ebaly', 2, `<g transform="translate(102 150) rotate(12)">

@@ -1,4 +1,4 @@
-const CACHE = "steppe-v13";
+const CACHE = "steppe-v14";
 const NET_TIMEOUT_MS = 4000;
 self.addEventListener("install", () => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
