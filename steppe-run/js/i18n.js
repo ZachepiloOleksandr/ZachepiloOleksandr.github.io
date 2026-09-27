@@ -20,6 +20,7 @@ export const ACT_KEYS = ['captured', 'finished', 'evac', 'bled'];
 
 const S = {
   uk: {
+    privacy: 'Конфіденційність', terms: 'Умови',
     title: 'СТЕПОВИЙ<br/>ЗАБІГ', tagline: 'Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?',
     start: 'ПОЧАТИ ЗАБІГ', market: 'МАРКЕТ', settings: 'НАЛАШТУВАННЯ',
     hint: 'Тягни пальцем будь-де — стрільба автоматична.',
@@ -66,6 +67,7 @@ const S = {
   },
 
   en: {
+    privacy: 'Privacy', terms: 'Terms',
     title: 'STEPPE<br/>RUN', tagline: 'Naked, barefoot and utterly hopeless.<br/>How many waves will you last?',
     start: 'START RUN', market: 'MARKET', settings: 'SETTINGS',
     hint: 'Drag anywhere to move — shooting is automatic.',
@@ -112,6 +114,7 @@ const S = {
   },
 
   pl: {
+    privacy: 'Prywatność', terms: 'Regulamin',
     title: 'STEPOWY<br/>BIEG', tagline: 'Nadzy, bosi i zupełnie bezradni.<br/>Ile fal przetrwasz?',
     start: 'START', market: 'SKLEP', settings: 'USTAWIENIA',
     hint: 'Przeciągnij palcem gdziekolwiek — strzelanie jest automatyczne.',
@@ -158,6 +161,7 @@ const S = {
   },
 
   de: {
+    privacy: 'Datenschutz', terms: 'Nutzungsbedingungen',
     title: 'STEPPEN-<br/>LAUF', tagline: 'Nackt, barfuß und völlig hilflos.<br/>Wie viele Wellen hältst du durch?',
     start: 'LAUF STARTEN', market: 'MARKT', settings: 'EINSTELLUNGEN',
     hint: 'Irgendwo ziehen zum Laufen — geschossen wird automatisch.',
@@ -204,6 +208,7 @@ const S = {
   },
 
   fr: {
+    privacy: 'Confidentialité', terms: 'Conditions',
     title: 'COURSE<br/>DE LA STEPPE', tagline: 'Nus, pieds nus et complètement perdus.<br/>Combien de vagues tiendras-tu ?',
     start: 'COMMENCER', market: 'MARCHÉ', settings: 'PARAMÈTRES',
     hint: 'Glisse le doigt n\'importe où — le tir est automatique.',
@@ -250,6 +255,7 @@ const S = {
   },
 
   es: {
+    privacy: 'Privacidad', terms: 'Términos',
     title: 'CARRERA<br/>ESTEPARIA', tagline: 'Desnudos, descalzos y sin remedio.<br/>¿Cuántas oleadas aguantarás?',
     start: 'EMPEZAR', market: 'MERCADO', settings: 'AJUSTES',
     hint: 'Arrastra el dedo en cualquier sitio — el disparo es automático.',
@@ -296,6 +302,7 @@ const S = {
   },
 
   it: {
+    privacy: 'Privacy', terms: 'Termini',
     title: 'CORSA<br/>NELLA STEPPA', tagline: 'Nudi, scalzi e del tutto impotenti.<br/>Quante ondate reggerai?',
     start: 'INIZIA', market: 'MERCATO', settings: 'IMPOSTAZIONI',
     hint: 'Trascina il dito ovunque — lo sparo è automatico.',
@@ -342,6 +349,7 @@ const S = {
   },
 
   pt: {
+    privacy: 'Privacidade', terms: 'Termos',
     title: 'CORRIDA<br/>NA ESTEPE', tagline: 'Nus, descalços e totalmente perdidos.<br/>Quantas ondas você aguenta?',
     start: 'COMEÇAR', market: 'MERCADO', settings: 'CONFIGURAÇÕES',
     hint: 'Arraste o dedo em qualquer lugar — o tiro é automático.',
@@ -388,6 +396,7 @@ const S = {
   },
 
   tr: {
+    privacy: 'Gizlilik', terms: 'Koşullar',
     title: 'BOZKIR<br/>KOŞUSU', tagline: 'Çıplak, yalınayak ve tamamen çaresiz.<br/>Kaç dalgaya dayanacaksın?',
     start: 'BAŞLA', market: 'PAZAR', settings: 'AYARLAR',
     hint: 'Herhangi bir yere sürükle — ateş otomatik.',
@@ -434,6 +443,7 @@ const S = {
   },
 
   zh: {
+    privacy: '隐私政策', terms: '使用条款',
     title: '草原<br/>狂奔', tagline: '光着身子、光着脚、毫无办法。<br/>你能撑过几波？',
     start: '开始', market: '市场', settings: '设置',
     hint: '在任意位置拖动移动 — 自动射击。',

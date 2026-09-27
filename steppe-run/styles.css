@@ -358,3 +358,6 @@ html, body {
 }
 .langBtn.on { background: linear-gradient(180deg, #f2cf5e, #d99b2e); color: #3a2c16; border-color: var(--gold); }
 #settings { gap: 14px; overflow-y: auto; }
+
+.legal { font-size: 12px; color: #bcae8a; }
+.legal a { color: #bcae8a; pointer-events: auto; }
