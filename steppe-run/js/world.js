@@ -14,7 +14,7 @@ export function generateRoom(state, n) {
   // Enemies are spawned inside the visible screen (see waves.js) so combat stays in view.
   const W = Math.round(rng.range(1700, 2100));
   const H = Math.round(rng.range(2150, 2650));
-  const world = { w: W, h: H, ts: TS, wt: WT, walls: [], obstacles: [], tall: [], kovyla: [], patches: [], wounded: null };
+  const world = { w: W, h: H, ts: TS, wt: WT, walls: [], obstacles: [], tall: [], kovyla: [], patches: [], decals: [], wounded: null };
   // Closed arena: solid walls on all sides. After the wave + perk the game fades to the next room.
   world.walls.push(
     { x: 0, y: 0, w: W, h: WT },
@@ -168,6 +168,11 @@ export function drawRoom(R, state) {
     const k = w.kovyla[i];
     if (k.x < cx - hw || k.x > cx + hw || k.y < cy - hh || k.y > cy + hh) continue;
     R.draw('kovyla', k.x, k.y, { rot: Math.sin(t * 2 + k.ph) * 0.12, ay: 0.95 });
+  }
+
+  for (let i = 0; i < w.decals.length; i++) {
+    const d = w.decals[i];
+    R.draw('scorch', d.x, d.y, { sx: d.s, sy: d.s, rot: d.rot });
   }
 
   // Ambient occlusion along the inner wall faces.

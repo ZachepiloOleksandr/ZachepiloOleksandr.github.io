@@ -41,45 +41,20 @@ export const PALETTE = {
   ink:    [40, 30, 16],
 };
 
-// Comic shouts — humiliation through farce, no gore.
-export const SHOUTS = {
-  naked:   ['Ой!', 'Мамо!', 'Тікаймо!', 'Капці!', 'А-а-а!', 'Де штани?!', 'Ні-ні-ні!'],
-  armed:   ['Каска налізла!', 'Рація не ловить!', 'Командир, що?!', 'Куди всі?', 'Я не бачу!', 'Заряджав?'],
-  rifle:   ['Та-та-та!', 'Тримайсь!', 'Хто ставив запобіжник?', 'Патрони де?', 'Ой, заклинило!'],
-  shovel:  ['Лови лопату!', 'Тримай!', 'На тобі!', 'Ось городина!'],
-  friendly:['Ой, свої!', 'Це ж я!', 'Не в той бік!'],
-  hurt:    ['Ай!', 'Тю!', 'Ну все...', 'Боляче!'],
-  trip:    ['Гоп!', 'Спіткнувсь!', 'Ой-йой!'],
-  surrender:['Здаюсь!', 'Не стріляй!', 'Я кухар!', 'Хочу в полон!', 'Мене змусили!'],
-  revive:  ['Оклигав!', 'Я ще живий!'],
-  cover:   ['Прикрий!', 'Тримаю сектор!', 'Перебіжка!', 'Я за укриттям!'],
-  crew:    ['Горимо!', 'Всі з машини!', 'Тікаймо!', 'Ніва, прощавай!'],
-};
-
-// Floaters for player actions (baked as sprites too).
-export const ACTION_PHRASES = { captured: 'Полонений!', finished: 'Добито', evac: 'Евакуйовано!', bled: 'Не встигли...' };
-
-// All distinct strings the texture baker must pre-render into the atlas as sprites.
-export const ALL_PHRASES = [
-  ...new Set([].concat(SHOUTS.naked, SHOUTS.armed, SHOUTS.rifle, SHOUTS.shovel, SHOUTS.friendly, SHOUTS.hurt, SHOUTS.trip, SHOUTS.surrender,
-    SHOUTS.revive, SHOUTS.cover, SHOUTS.crew, Object.values(ACTION_PHRASES), ['+HP'])),
-];
-
-// Roguelike run upgrades. apply() mutates the player stat block in place.
+// Roguelike run upgrades (names/descriptions in i18n: perk.<id>, perk.<id>.d). apply() mutates the player.
 export const PERKS = [
-  { id: 'firerate', icon: '🔥', name: 'Скорострільність', desc: '+22% темп стрільби', apply: (p) => { p.fireRate *= 1.22; } },
-  { id: 'damage',   icon: '💥', name: 'Калібр',           desc: '+28% шкоди',        apply: (p) => { p.damage *= 1.28; } },
-  { id: 'speed',    icon: '👟', name: 'Біг підтюпцем',     desc: '+14% швидкості',    apply: (p) => { p.speed *= 1.14; } },
-  { id: 'shotgun',  icon: '🌽', name: 'Качан дробу',       desc: '+1 куля віялом',    apply: (p) => { p.multishot += 1; } },
-  { id: 'range',    icon: '🎯', name: 'Далекобій',         desc: '+20% дальність',    apply: (p) => { p.range *= 1.2; p.bulletSpeed *= 1.1; } },
-  { id: 'pierce',   icon: '🔩', name: 'Бронебійні',        desc: 'куля б\'є +1 ворога', apply: (p) => { p.pierce += 1; } },
-  { id: 'heal',     icon: '🩹', name: 'Аптечка',           desc: '+20 макс. HP, лікує', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
+  { id: 'firerate', icon: '🔥', apply: (p) => { p.fireRate *= 1.22; } },
+  { id: 'damage', icon: '💥', apply: (p) => { p.damage *= 1.28; } },
+  { id: 'speed', icon: '👟', apply: (p) => { p.speed *= 1.14; } },
+  { id: 'shotgun', icon: '🌽', apply: (p) => { p.multishot += 1; } },
+  { id: 'range', icon: '🎯', apply: (p) => { p.range *= 1.2; p.bulletSpeed *= 1.1; } },
+  { id: 'pierce', icon: '🔩', apply: (p) => { p.pierce += 1; } },
+  { id: 'heal', icon: '🩹', apply: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 45); } },
 ];
 
 // єБали (after the real "Армія дронів. Бонус" program): every confirmed result earns points,
 // which are exchanged for tech in the Маркет. Results go to "DELTA" for verification and are
 // credited when the wave is cleared; dying mid-wave confirms only part of the pending claims.
-export const EB = 'єБ';
 export const EBALY = {
   deathConfirm: 0.5,   // share of pending єБали confirmed if you fall mid-wave
   evac: 5,             // evacuating a wounded comrade
@@ -105,7 +80,7 @@ export const DOWN = {
 // Launched only by the 🚁 button; prefers vehicles (a drone kills a car with its crew inside).
 export const DRONE = {
   cd: 10, cdPerLvl: 1.5,   // recharge seconds per drone, faster per level
-  speed: 640, dmg: 40, dmgPerWave: 4, blastR: 70,
+  speed: 640, dmg: 44, dmgPerWave: 4, blastR: 92, edgeDmg: 0.45, knock: 260,
   orbitR: 38, range: 620,
 };
 
@@ -120,16 +95,16 @@ export const LOOT = {
   vacuumDelay: 1.1,   // after a wave clears: time for leftovers to fly in before the perk screen
 };
 
-// Маркет: permanent upgrades bought with banked єБали. lvl 0..max.
+// Маркет: permanent upgrades bought with banked єБали (texts in i18n: up.<id>, up.<id>.d). lvl 0..max.
 export const UPGRADES = [
-  { id: 'fpv',    icon: '🚁', name: 'FPV-дрон',     desc: 'кнопка 🚁: удар по цілі, Ніву знищує з екіпажем; 3-й рівень — 2 дрони', max: 3, base: 60, apply: (p, l) => { p.fpv = l; } },
-  { id: 'reb',    icon: '📡', name: 'РЕБ',          desc: '−12% ворожих пострілів (глушить)', max: 3, base: 45, apply: (p, l) => { p.reb = 0.12 * l; } },
-  { id: 'nrk',    icon: '🚜', name: 'НРК-евакуація', desc: '1 раз за забіг витягує з того світу (50% HP)', max: 1, base: 150, apply: (p) => { p.revives = 1; } },
-  { id: 'hp',     icon: '❤️', name: 'Загартування', desc: '+12 макс. HP',        max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
-  { id: 'dmg',    icon: '💥', name: 'Набої',        desc: '+8% шкоди',           max: 5, base: 25, apply: (p, l) => { p.damage *= 1 + 0.08 * l; } },
-  { id: 'rate',   icon: '🔥', name: 'Затвор',       desc: '+7% темп стрільби',   max: 5, base: 25, apply: (p, l) => { p.fireRate *= 1 + 0.07 * l; } },
-  { id: 'speed',  icon: '👟', name: 'Берці',        desc: '+5% швидкості',       max: 5, base: 20, apply: (p, l) => { p.speed *= 1 + 0.05 * l; } },
-  { id: 'ebaly',  icon: '📋', name: 'Бойовий облік', desc: '+1 єБал за кожен кіл', max: 3, base: 40, apply: (p, l) => { p.ebalyBonus += l; } },
+  { id: 'fpv', icon: '🚁', max: 3, base: 60, apply: (p, l) => { p.fpv = l; } },
+  { id: 'reb', icon: '📡', max: 3, base: 45, apply: (p, l) => { p.reb = 0.12 * l; } },
+  { id: 'nrk', icon: '🚜', max: 1, base: 150, apply: (p) => { p.revives = 1; } },
+  { id: 'hp', icon: '❤️', max: 5, base: 20, apply: (p, l) => { p.maxHp += 12 * l; p.hp = p.maxHp; } },
+  { id: 'dmg', icon: '💥', max: 5, base: 25, apply: (p, l) => { p.damage *= 1 + 0.08 * l; } },
+  { id: 'rate', icon: '🔥', max: 5, base: 25, apply: (p, l) => { p.fireRate *= 1 + 0.07 * l; } },
+  { id: 'speed', icon: '👟', max: 5, base: 20, apply: (p, l) => { p.speed *= 1 + 0.05 * l; } },
+  { id: 'ebaly', icon: '📋', max: 3, base: 40, apply: (p, l) => { p.ebalyBonus += l; } },
 ];
 
 export function upgradeCost(u, lvl) { return Math.round(u.base * Math.pow(lvl + 1, 1.5)); }

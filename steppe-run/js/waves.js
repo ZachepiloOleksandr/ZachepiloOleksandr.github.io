@@ -2,6 +2,7 @@
 import { clamp } from './math.js';
 import { waveComposition } from './data.js';
 import { spawnEnemy } from './enemies.js';
+import { t } from './i18n.js';
 
 export function startRun(state) {
   state.stats.kills = 0;
@@ -21,7 +22,7 @@ export function startWave(state, n) {
   w.introT = 1.6;
   w.spawnCd = 0.4;
   state.hud.setWave(n);
-  state.onBanner('Хвиля ' + n);
+  state.onBanner(t('wave', { n }));
 }
 
 function spawnInRoom(state, type) {

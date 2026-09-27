@@ -11,6 +11,7 @@ import { burst, shout, throwSprite, shake, addEbaly, addDamage } from './fx.js';
 import { spawnEnemyBullet, hurtPlayer } from './bullets.js';
 import { resolveCircle, onScreen, clampInside, losBlocked, addWreck } from './world.js';
 import { dropLoot } from './pickups.js';
+import { t } from './i18n.js';
 
 export function spawnEnemy(state, type, x, y) {
   const def = ENEMY_DEFS[type];
@@ -98,7 +99,7 @@ function onDeath(state, e) {
   state.stats.kills++;
   if (e.resolved === 'capture') {
     state.stats.captured++;
-    creditEbaly(state, e, killValue(state, e.def) * DOWN.captureMul + DOWN.captureBonus, 'Полонений!');
+    creditEbaly(state, e, killValue(state, e.def) * DOWN.captureMul + DOWN.captureBonus, 'act.captured');
     state.A.perk();
     console.log('CAPTURE ' + e.def.sprite);
     return;
@@ -110,7 +111,7 @@ function onDeath(state, e) {
   if (e.type === ENEMY.SHOVEL && state.rng.chance(0.6)) throwSprite(state, e.x, e.y, 'pants', {});
   shake(state, 4);
   dropLoot(state, e);
-  creditEbaly(state, e, killValue(state, e.def), e.resolved === 'finish' ? 'Добито' : null);
+  creditEbaly(state, e, killValue(state, e.def), e.resolved === 'finish' ? 'act.finished' : null);
 }
 
 function carDestroyed(state, e) {
@@ -137,7 +138,7 @@ function carDestroyed(state, e) {
     for (const t of crew) total += killValue(state, ENEMY_DEFS[t]);
     state.stats.kills += crew.length;
     creditEbaly(state, e, total, null);
-    state.onBanner('Дрон накрив Ниву з екіпажем!');
+    state.onBanner(t('bDroneNiva'));
     console.log('NIVA droned with crew, +' + total);
   }
 }

@@ -1,7 +1,7 @@
 // Маркет tech in the field: FPV drones hover by the hero and strike only when the 🚁 button is pressed.
 // Target priority: a vehicle on screen (a drone kills a Niva together with its crew), else the nearest foe.
-import { DRONE, PALETTE as P } from './data.js';
-import { burst, shake } from './fx.js';
+import { DRONE } from './data.js';
+import { shake, addExplosion } from './fx.js';
 import { onScreen } from './world.js';
 import { damageEnemy, resolveDowned } from './enemies.js';
 
@@ -44,27 +44,29 @@ export function launchDrone(state) {
   const t = pickTarget(state);
   if (!t) { console.log('FPV: no target on screen'); return false; }
   d.mode = 'dive'; d.target = t;
-  state.A.start();
+  state.A.droneLaunch();
   console.log('FPV launch → ' + t.def.sprite);
   return true;
 }
 
+// Area blast: full damage at the centre fading to edgeDmg at the rim, knocks survivors outward.
 function strike(state, d, target) {
-  const r2 = DRONE.blastR * DRONE.blastR, dmg = DRONE.dmg + DRONE.dmgPerWave * state.wave.index;
+  const R = DRONE.blastR, base = DRONE.dmg + DRONE.dmgPerWave * state.wave.index;
   let hits = 0;
   for (const e of state.enemies) {
     if (!e.alive) continue;
-    const dx = e.x - d.x, dy = e.y - d.y;
-    if (dx * dx + dy * dy > r2 && e !== target) continue;
+    const dx = e.x - d.x, dy = e.y - d.y, dist = Math.hypot(dx, dy);
+    if (dist > R + e.radius && e !== target) continue;
     hits++;
-    if (e.downed) resolveDowned(state, e, 'finish');
-    else damageEnemy(state, e, e === target && e.def.vehicle ? e.hp + 1 : dmg, 'drone');
+    if (e.downed) { resolveDowned(state, e, 'finish'); continue; }
+    const fall = 1 - (1 - DRONE.edgeDmg) * Math.min(1, dist / R);
+    damageEnemy(state, e, e === target && e.def.vehicle ? e.hp + 1 : Math.round(base * fall), 'drone');
+    if (!e.def.vehicle && dist > 1) { e.vx += (dx / dist) * DRONE.knock * fall; e.vy += (dy / dist) * DRONE.knock * fall; }
   }
-  burst(state, d.x, d.y, { n: 14, color: P.muzzle, speed: 220, size: 14, life: 0.45 });
-  burst(state, d.x, d.y, { n: 8, color: P.dust, speed: 120, size: 16, life: 0.6 });
-  shake(state, 7);
-  state.A.enemyDie();
-  console.log('FPV strike hits=' + hits + ' dmg=' + dmg);
+  addExplosion(state, d.x, d.y, R);
+  shake(state, 12);
+  state.A.explosion();
+  console.log('FPV strike hits=' + hits + ' base=' + base + ' R=' + R);
 }
 
 export function updateDrones(state, dt) {

@@ -62,30 +62,31 @@ export function createRenderer(gl, atlas) {
     uTex: gl.getUniformLocation(prog, 'uTex'),
   };
 
-  // Texture from atlas canvas.
+  // Texture from atlas canvas (re-uploaded when the atlas is re-baked, e.g. on a language switch).
   const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.canvas);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  // Precompute UV rects per frame.
-  const AW = atlas.canvas.width, AH = atlas.canvas.height;
-  const uv = {};
-  for (const name in atlas.frames) {
-    const f = atlas.frames[name];
-    // Inset by half a texel to avoid bleeding from neighbours.
-    const ix = 0.5 / AW, iy = 0.5 / AH;
-    uv[name] = {
-      u0: f.x / AW + ix, v0: f.y / AH + iy,
-      u1: (f.x + f.w) / AW - ix, v1: (f.y + f.h) / AH - iy,
-      w: f.lw, h: f.lh,
-    };
+  let uv = {};
+  function setAtlas(a) {
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, a.canvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // Precompute UV rects per frame; inset by half a texel to avoid bleeding from neighbours.
+    const AW = a.canvas.width, AH = a.canvas.height, ix = 0.5 / AW, iy = 0.5 / AH;
+    uv = {};
+    for (const name in a.frames) {
+      const f = a.frames[name];
+      uv[name] = {
+        u0: f.x / AW + ix, v0: f.y / AH + iy,
+        u1: (f.x + f.w) / AW - ix, v1: (f.y + f.h) / AH - iy,
+        w: f.lw, h: f.lh,
+      };
+    }
   }
+  setAtlas(atlas);
 
   const data = new Float32Array(MAX_QUADS * VERTS_PER_QUAD * FLOATS_PER_VERT);
   const buf = gl.createBuffer();
@@ -179,5 +180,5 @@ export function createRenderer(gl, atlas) {
 
   function frame(name) { return uv[name]; }
 
-  return { resize, begin, draw, flush, frame, gl };
+  return { resize, begin, draw, flush, frame, setAtlas, gl };
 }

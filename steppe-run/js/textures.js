@@ -1,7 +1,8 @@
 // Procedural texture atlas baked on a 2D canvas, then uploaded to GL as one texture.
 // No binary assets — every sprite is drawn here. Characters are drawn facing +x (right)
 // so the renderer can rotate them straight to their aim/move angle.
-import { PALETTE as P, ALL_PHRASES, EB } from './data.js';
+import { PALETTE as P } from './data.js';
+import { t, SHOUT_CATS, ACT_KEYS, shoutLines, actLine } from './i18n.js';
 
 const rgba = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
@@ -370,6 +371,34 @@ export function buildAtlas() {
     c.fillStyle = '#fbfaf4'; c.beginPath(); c.moveTo(4, 3); c.quadraticCurveTo(12, 0, 20, 4); c.lineTo(20, 13); c.quadraticCurveTo(12, 10, 4, 13); c.closePath(); c.fill();
   });
 
+  // ---- explosion pieces ----
+  place('fireball', 64, 64, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(255,255,230,1)'); g.addColorStop(0.25, 'rgba(255,220,110,1)');
+    g.addColorStop(0.55, 'rgba(255,130,40,0.9)'); g.addColorStop(0.8, 'rgba(180,50,20,0.5)'); g.addColorStop(1, 'rgba(90,30,10,0)');
+    c.fillStyle = g; c.beginPath();
+    for (let i = 0; i <= 16; i++) {  // lumpy edge so it doesn't read as a perfect disc
+      const a = (i / 16) * Math.PI * 2, r = w / 2 * (0.86 + 0.14 * Math.sin(i * 2.7));
+      c.lineTo(w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r);
+    }
+    c.fill();
+  });
+  place('ring', 64, 64, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(0.7, 'rgba(255,240,200,0.75)'); g.addColorStop(1, 'rgba(255,240,200,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  place('scorch', 64, 64, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(25,18,10,0.85)'); g.addColorStop(0.5, 'rgba(40,28,14,0.55)'); g.addColorStop(1, 'rgba(40,28,14,0)');
+    c.fillStyle = g; c.beginPath();
+    for (let i = 0; i <= 14; i++) {
+      const a = (i / 14) * Math.PI * 2, r = w / 2 * (0.75 + 0.25 * Math.abs(Math.sin(i * 1.9)));
+      c.lineTo(w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r);
+    }
+    c.fill();
+  });
+
   // ---- market tech: FPV drone (top-down quad) ----
   placeOutlined('drone', 26, 26, (c, w, h) => {
     const m = w / 2;
@@ -438,12 +467,17 @@ export function buildAtlas() {
   for (let d = 0; d <= 9; d++) bakeText('d' + d, String(d), { size: 26, fill: '#fff' });
   bakeText('dminus', '-', { size: 26, fill: '#fff' });
   bakeText('dplus', '+', { size: 26, fill: '#fff' });
-  bakeText('deb', ' ' + EB, { size: 26, fill: '#fff' });
-  ALL_PHRASES.forEach((s, i) => bakeText('t' + i, s, { size: 28 }));
+  bakeText('deb', ' ' + t('eb'), { size: 26, fill: '#fff' });
 
-  // Map phrase string -> baked frame name for lookup by callers.
-  const phraseFrame = {};
-  ALL_PHRASES.forEach((s, i) => { phraseFrame[s] = 't' + i; });
+  // Current-language phrases: shouts as 'sh.<cat>.<i>', action captions as 'act.<key>'.
+  const phraseFrame = {}, shoutCount = {};
+  for (const cat of SHOUT_CATS) {
+    const lines = shoutLines(cat);
+    shoutCount[cat] = lines.length;
+    lines.forEach((s, i) => { const k = 'sh.' + cat + '.' + i; bakeText(k, s, { size: 28 }); phraseFrame[k] = k; });
+  }
+  for (const k of ACT_KEYS) { bakeText('act.' + k, actLine(k), { size: 28 }); phraseFrame['act.' + k] = 'act.' + k; }
+  bakeText('hp', '+HP', { size: 28 }); phraseFrame.hp = 'hp';
 
-  return { canvas: cv, frames, phraseFrame };
+  return { canvas: cv, frames, phraseFrame, shoutCount };
 }

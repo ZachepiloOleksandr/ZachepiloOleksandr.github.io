@@ -11,8 +11,10 @@ import { createPlayer, updatePlayer, drawPlayer } from './player.js';
 import { updatePlayerFire, updateBullets, drawBullets } from './bullets.js';
 import { updateEnemies, drawEnemy } from './enemies.js';
 import { startRun, startWave, updateWaves } from './waves.js';
-import { updateFx, drawParticles, drawFloaters } from './fx.js';
-import { PERKS, LOOT, EB, EBALY } from './data.js';
+import { updateFx, drawParticles, drawFloaters, drawExplosions } from './fx.js';
+import { PERKS, LOOT, EBALY } from './data.js';
+import { setLang, applyDom, t } from './i18n.js';
+import { loadSettings, saveSettings } from './settings.js';
 import { loadBank, saveBank, applyUpgrades } from './meta.js';
 import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
 import { resetDrones, updateDrones, drawDrones, launchDrone, droneStatus } from './drones.js';
@@ -28,18 +30,26 @@ function loadBest() {
 function saveBest(b) { try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (_) {} }
 
 function main() {
+  const settings = loadSettings();
+  setLang(settings.lang);
+  applyDom();
+  console.log('SETTINGS ' + JSON.stringify(settings));
+
   const canvas = document.getElementById('gl');
   const gl = canvas.getContext('webgl', { alpha: false, antialias: false }) ||
              canvas.getContext('experimental-webgl', { alpha: false });
   if (!gl) {
-    document.getElementById('menu').innerHTML = '<h1>WebGL недоступний</h1><p class="sub">Спробуй інший браузер.</p>';
+    document.getElementById('menu').innerHTML = '<h1>' + t('noWebgl') + '</h1><p class="sub">' + t('noWebglSub') + '</p>';
     return;
   }
 
   const atlas = buildAtlas();
   const R = createRenderer(gl, atlas);
   const A = createAudio();
+  A.configure(settings);
   const hud = createHud();
+  hud.settings = settings;
+  hud.relabel();
   const input = createInput(canvas);
 
   const state = {
@@ -48,7 +58,7 @@ function main() {
     zoom: 1, view: { halfW: 420, halfH: 420 },
     cam: { x: 0, y: 0, shake: 0, sx: 0, sy: 0 },
     world: null, player: null,
-    enemies: [], bullets: [], pickups: [], drones: [], fx: { particles: [], floaters: [] },
+    enemies: [], bullets: [], pickups: [], drones: [], fx: { particles: [], floaters: [], explosions: [] },
     stats: { kills: 0, ebaly: 0, pending: 0, lastConfirmed: 0, captured: 0, evacuated: 0 },
     capturing: null,
     bank: loadBank(), clearT: 0,
@@ -96,12 +106,13 @@ function main() {
     state.drones.length = 0;
     state.fx.particles.length = 0;
     state.fx.floaters.length = 0;
+    state.fx.explosions.length = 0;
   }
 
   // DELTA verification: move pending єБали claims into the bank (share = 1 on wave clear).
   function confirmPending(share) {
     const s = state.stats, ok = Math.floor(s.pending * share);
-    console.log('DELTA confirm ' + ok + '/' + s.pending + ' ' + EB);
+    console.log('DELTA confirm ' + ok + '/' + s.pending);
     s.ebaly += ok; state.bank.ebaly += ok;
     s.lastConfirmed = ok; s.lost = s.pending - ok; s.pending = 0;
     saveBank(state.bank);
@@ -119,7 +130,7 @@ function main() {
   }
 
   function newRun() {
-    A.resume(); A.start();
+    A.resume(); A.start(); A.startMusic();
     state.rng = makeRng((Math.random() * 0x7fffffff) >>> 0);
     generateRoom(state, 1);
     createPlayer(state);
@@ -136,7 +147,7 @@ function main() {
     resetDrones(state);
     placeWounded(state);
     state.clearT = 0;
-    console.log('RUN start | bank ' + state.bank.ebaly + ' ' + EB + ' | up ' + JSON.stringify(state.bank.up));
+    console.log('RUN start | bank ' + state.bank.ebaly + ' | up ' + JSON.stringify(state.bank.up));
     input.reset();
     hud.setHP(state.player.hp, state.player.maxHp);
     hud.setKills(0);
@@ -195,10 +206,32 @@ function main() {
     if (state.stats.kills > state.best.kills) state.best.kills = state.stats.kills;
     saveBest(state.best);
     saveBank(state.bank);
-    console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.ebaly + ' ' + EB + ' | bank ' + state.bank.ebaly);
+    console.log('RUN end | хв ' + state.wave.index + ' | +' + state.stats.ebaly + ' | bank ' + state.bank.ebaly);
     hud.showDeath({ wave: state.wave.index, kills: state.stats.kills, ebaly: state.stats.ebaly, lost: state.stats.lost, bank: state.bank.ebaly,
       captured: state.stats.captured, evacuated: state.stats.evacuated, best: state.best });
   }
+
+  // Settings: audio levels apply live; a language switch re-bakes the atlas (shouts are sprites).
+  hud.onSettingsChange = (patch) => {
+    saveSettings(settings);
+    A.resume();
+    A.configure(settings);
+    if ('lang' in patch) {
+      setLang(settings.lang);
+      state.atlas = buildAtlas();
+      R.setAtlas(state.atlas);
+      console.log('LANG → ' + settings.lang);
+    }
+  };
+  let pausedFrom = null;
+  hud.onPause = () => {
+    if (state.status !== 'playing') return false;
+    pausedFrom = state.status; state.status = 'paused'; input.reset();
+    return true;
+  };
+  hud.onResume = () => { if (state.status === 'paused') state.status = pausedFrom || 'playing'; };
+  // Music starts on the first user gesture (browsers block autoplay).
+  window.addEventListener('pointerdown', () => { A.resume(); A.startMusic(); }, { once: true });
 
   hud.onStart = newRun;
   hud.onRetry = newRun;
@@ -227,6 +260,7 @@ function main() {
   }
 
   function update(dt) {
+    if (state.status === 'paused') return;
     state.time += dt;
     input.poll();
     if (state.status === 'playing') {
@@ -295,6 +329,7 @@ function main() {
     drawPickups(R, state);
     drawBullets(R, state);
     drawDrones(R, state);
+    drawExplosions(R, state);
     drawParticles(R, state);
     R.draw('vignette', cam.x + cam.sx, cam.y + cam.sy, { w: state.view.halfW * 2 + 4, h: state.view.halfH * 2 + 4 });
     drawFloaters(R, state);

@@ -1,8 +1,9 @@
 // Projectiles & combat resolution. Player auto-fires at the nearest in-range enemy.
 // Enemy bullets hurt the player AND other enemies (friendly fire — they shoot their own).
 import { angleTo } from './math.js';
-import { burst, shake, FX_COLORS } from './fx.js';
+import { burst, shake, shout, FX_COLORS } from './fx.js';
 import { damageEnemy } from './enemies.js';
+import { t } from './i18n.js';
 import { PALETTE as P } from './data.js';
 import { pointSolidHit, onScreen } from './world.js';
 
@@ -88,7 +89,7 @@ export function hurtPlayer(state, amt) {
       p.hp = Math.round(p.maxHp * 0.5);
       p.hurtT = 2;
       burst(state, p.x, p.y, { n: 18, color: P.white, speed: 200, size: 12, life: 0.6 });
-      state.onBanner('НРК евакуював! 🚜');
+      state.onBanner(t('bNrk') + ' 🚜');
       console.log('NRK revive → hp ' + p.hp);
       return;
     }
@@ -134,10 +135,7 @@ export function updateBullets(state, dt) {
           const dx = b.x - e.x, dy = b.y - e.y, rr = e.radius + b.r;
           if (dx * dx + dy * dy < rr * rr) {
             hitEnemy(state, e, b, 'ff');
-            if (!e.def.vehicle && state.rng.chance(0.5)) {
-              const fr = state.atlas.phraseFrame[state.rng.pick(['Ой, свої!', 'Це ж я!', 'Не в той бік!'])];
-              if (fr) state.fx.floaters.push({ x: e.x, y: e.y - e.radius - 8, vy: -52, life: 1.0, maxLife: 1.0, spr: fr, scale: 0.78, r: 1, g: 0.9, b: 0.8 });
-            }
+            if (!e.def.vehicle && state.rng.chance(0.5)) shout(state, e.x, e.y - e.radius + 14, 'friendly');
             dead = true;
             break;
           }

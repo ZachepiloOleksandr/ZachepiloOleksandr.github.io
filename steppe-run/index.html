@@ -31,20 +31,37 @@
           <span id="hplabel">100</span>
         </div>
         <div id="stats">
-          <span id="waveLabel">Хвиля 1</span>
+          <span id="waveLabel"></span>
           <span id="killLabel">☠ 0</span>
-          <span id="ebLabel">0 єБ</span>
+          <span id="ebLabel"></span>
         </div>
       </div>
       <div id="banner" class="hidden"></div>
     </div>
+    <button id="pauseBtn" class="hidden" aria-label="pause">⚙</button>
 
     <!-- Combat buttons: FPV drone launch + finish/capture a downed enemy -->
     <div id="actions" class="hidden">
-      <button id="actFinish" class="actBtn">🔫<span>ДОБИТИ</span></button>
-      <button id="actCapture" class="actBtn">🤝<span>В ПОЛОН</span></button>
+      <button id="actFinish" class="actBtn">🔫<span data-i18n="finish"></span></button>
+      <button id="actCapture" class="actBtn">🤝<span data-i18n="capture"></span></button>
     </div>
-    <button id="droneBtn" class="actBtn hidden">🚁<span id="droneLbl">ГОТОВО</span></button>
+    <button id="droneBtn" class="actBtn hidden">
+      <svg class="fpvIcon" viewBox="0 0 48 48" aria-hidden="true">
+          <g stroke="#f2cf5e" stroke-width="1.4" fill="rgba(255,247,224,0.16)">
+            <circle cx="10" cy="10" r="8.5"/><circle cx="38" cy="10" r="8.5"/><circle cx="10" cy="38" r="8.5"/><circle cx="38" cy="38" r="8.5"/>
+          </g>
+          <g stroke="#fff7e0" stroke-width="1.6" stroke-linecap="round">
+            <path d="M4 7l12 6M32 7l12 6M4 35l12 6M32 35l12 6"/>
+          </g>
+          <path d="M12 12l24 24M36 12L12 36" stroke="#fff7e0" stroke-width="4.2" stroke-linecap="round"/>
+          <g fill="#fff7e0"><circle cx="10" cy="10" r="3"/><circle cx="38" cy="10" r="3"/><circle cx="10" cy="38" r="3"/><circle cx="38" cy="38" r="3"/></g>
+          <rect x="17.5" y="16" width="13" height="16" rx="3" fill="#3a2c16" stroke="#fff7e0" stroke-width="2"/>
+          <rect x="20.5" y="13" width="7" height="5" rx="1.5" fill="#fff7e0"/>
+          <circle cx="24" cy="15.5" r="1.8" fill="#e8483c"/>
+          <path d="M24 32v6" stroke="#f2cf5e" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      <span id="droneLbl"></span>
+    </button>
 
     <!-- Virtual joystick -->
     <div id="stick" class="hidden">
@@ -54,36 +71,51 @@
 
     <!-- Menu -->
     <div id="menu" class="overlay">
-      <h1>СТЕПОВИЙ<br/>ЗАБІГ</h1>
-      <p class="sub">Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?</p>
-      <button id="startBtn" class="btn">ПОЧАТИ ЗАБІГ</button>
-      <button id="shopBtn" class="btn btn2">МАРКЕТ · <span id="menuBank">0</span> єБ</button>
+      <h1 data-i18n-html="title"></h1>
+      <p class="sub" data-i18n-html="tagline"></p>
+      <button id="startBtn" class="btn" data-i18n="start"></button>
+      <button id="shopBtn" class="btn btn2"><span data-i18n="market"></span> · <span id="menuBank">0</span> <span data-i18n="eb"></span></button>
+      <button id="settingsBtn" class="btn btn2">⚙ <span data-i18n="settings"></span></button>
       <p class="best" id="menuBest"></p>
-      <p class="hint">Тягни пальцем будь-де ліворуч/знизу — стрільба автоматична.</p>
+      <p class="hint" data-i18n="hint"></p>
     </div>
 
     <!-- Perk selection -->
     <div id="perks" class="overlay hidden">
-      <h2>ХВИЛЮ ПРОЙДЕНО!</h2>
+      <h2 data-i18n="waveCleared"></h2>
       <p class="best" id="perkNote"></p>
-      <p class="sub">Обери апгрейд для забігу:</p>
+      <p class="sub" data-i18n="pickPerk"></p>
       <div id="perkCards"></div>
     </div>
 
     <!-- Death screen -->
     <div id="death" class="overlay hidden">
-      <h2>ЗАБІГ ЗАВЕРШЕНО</h2>
+      <h2 data-i18n="runOver"></h2>
       <div id="deathStats"></div>
-      <button id="retryBtn" class="btn">НОВИЙ ЗАБІГ</button>
-      <button id="toMenuBtn" class="btn btn2">В МЕНЮ · МАРКЕТ</button>
+      <button id="retryBtn" class="btn" data-i18n="newRun"></button>
+      <button id="toMenuBtn" class="btn btn2"><span data-i18n="toMenu"></span> · <span data-i18n="market"></span></button>
     </div>
 
     <!-- Meta shop: permanent upgrades for banked єБали -->
     <div id="shop" class="overlay hidden">
-      <h2>МАРКЕТ</h2>
-      <p class="sub">єБали: <b id="shopBank">0</b><br/><small>Бали за підтверджені кіли й евакуацію — обмінюй на техніку</small></p>
+      <h2 data-i18n="market"></h2>
+      <p class="sub"><span id="shopBank"></span><br/><small data-i18n="shopNote"></small></p>
       <div id="shopCards"></div>
-      <button id="shopBack" class="btn btn2">НАЗАД</button>
+      <button id="shopBack" class="btn btn2" data-i18n="back"></button>
+    </div>
+
+    <!-- Settings (from the menu) / pause (in a run) -->
+    <div id="settings" class="overlay hidden">
+      <h2 id="settingsTitle"></h2>
+      <div id="setPanel">
+        <label class="setRow"><span data-i18n="sVolume"></span><input id="setVolume" type="range" min="0" max="100" step="5" /><b id="setVolumeVal"></b></label>
+        <div class="setRow"><span data-i18n="sSound"></span><button id="setSfx" class="toggle"></button></div>
+        <div class="setRow"><span data-i18n="sMusic"></span><button id="setMusic" class="toggle"></button></div>
+        <div class="setRow setLangRow"><span data-i18n="sLang"></span><div id="setLangs"></div></div>
+      </div>
+      <button id="setResume" class="btn" data-i18n="resume"></button>
+      <button id="setBack" class="btn btn2" data-i18n="back"></button>
+      <button id="setQuit" class="btn btn2" data-i18n="toMenu"></button>
     </div>
   </div>
 

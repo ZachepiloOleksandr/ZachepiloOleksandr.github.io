@@ -1,6 +1,6 @@
 // Visual juice: particles, floating comic text, damage numbers, screen shake.
 // Operates on state.fx = { particles:[], floaters:[] }. Cosmetic only.
-import { PALETTE as P, SHOUTS } from './data.js';
+import { PALETTE as P } from './data.js';
 
 const n255 = (c) => [c[0] / 255, c[1] / 255, c[2] / 255];
 
@@ -49,12 +49,11 @@ export function addFloater(state, x, y, spr, opts = {}) {
   });
 }
 
-// Comic shout above an entity, picked from a SHOUTS list. Throttled per-entity by caller.
+// Comic shout above an entity: a random baked line of the category in the current language.
 export function shout(state, x, y, list) {
-  const arr = SHOUTS[list];
-  if (!arr) return;
-  const str = state.rng.pick(arr);
-  const frame = state.atlas.phraseFrame[str];
+  const n = state.atlas.shoutCount[list];
+  if (!n) return;
+  const frame = state.atlas.phraseFrame['sh.' + list + '.' + state.rng.int(0, n - 1)];
   if (frame) addFloater(state, x, y - 22, frame, { scale: 0.8, jx: state.rng.range(-6, 6) });
 }
 
@@ -80,11 +79,36 @@ export function addEbaly(state, x, y, amount) {
   });
 }
 
+// Big explosion (FPV drone): flash, fireball, shockwave ring, sparks, lingering smoke, scorch mark on the ground.
+export function addExplosion(state, x, y, r) {
+  state.fx.explosions.push({ x, y, r, t: 0, dur: 0.75, rot: state.rng.angle() });
+  burst(state, x, y, { n: 18, color: [255, 200, 90], speed: r * 5, size: 7, life: 0.45, drag: 2.2 });           // sparks
+  burst(state, x, y, { n: 10, color: [255, 120, 40], speed: r * 2.5, size: 20, life: 0.5, drag: 3 });          // flames
+  burst(state, x, y, { n: 14, color: [70, 64, 58], speed: r * 1.3, size: 34, life: 1.6, a: 0.55, drag: 1.6, up: 40 }); // smoke
+  burst(state, x, y, { n: 8, color: P.dirtDk, speed: r * 3, size: 8, life: 0.9, grav: 420, drag: 0.8, up: 160 }); // clods
+  const w = state.world;
+  if (w) w.decals.push({ x, y, s: r / 40, rot: state.rng.angle() });
+}
+
+export function drawExplosions(R, state) {
+  const ex = state.fx.explosions;
+  for (let i = 0; i < ex.length; i++) {
+    const e = ex[i], k = e.t / e.dur;
+    if (k < 0.18) R.draw('soft', e.x, e.y, { w: e.r * 3.2, h: e.r * 3.2, a: 1 - k / 0.18 });                  // flash
+    const fb = k < 0.3 ? 0.35 + (k / 0.3) * 0.85 : 1.2 - (k - 0.3) * 0.5;
+    R.draw('fireball', e.x, e.y, { w: e.r * 2 * fb, h: e.r * 2 * fb, rot: e.rot + k, a: Math.max(0, 1 - k * 1.25) });
+    const rr = e.r * (0.3 + k * 1.1);
+    R.draw('ring', e.x, e.y, { w: rr * 2, h: rr * 2, a: Math.max(0, 0.85 - k) });                          // shockwave
+  }
+}
+
 export function shake(state, amt) {
   state.cam.shake = Math.min((state.cam.shake || 0) + amt, 28);
 }
 
 export function updateFx(state, dt) {
+  const ex = state.fx.explosions;
+  for (let i = ex.length - 1; i >= 0; i--) { ex[i].t += dt; if (ex[i].t >= ex[i].dur) { ex[i] = ex[ex.length - 1]; ex.pop(); } }
   const ps = state.fx.particles;
   for (let i = ps.length - 1; i >= 0; i--) {
     const p = ps[i];

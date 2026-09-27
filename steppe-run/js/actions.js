@@ -77,7 +77,7 @@ function updateWounded(state, dt) {
   u.ph += dt;
   u.bleed -= dt;
   if (u.bleed <= 0) {
-    floatPhrase(state, u.x, u.y - 30, 'Не встигли...', [1, 0.6, 0.6]);
+    floatPhrase(state, u.x, u.y - 30, 'act.bled', [1, 0.6, 0.6]);
     console.log('EVAC failed: bled out');
     w.wounded = null;
     return;
@@ -87,7 +87,7 @@ function updateWounded(state, dt) {
   if (u.hold < EBALY.evacHold) return;
   state.stats.pending += EBALY.evac;
   state.stats.evacuated++;
-  floatPhrase(state, u.x, u.y - 30, 'Евакуйовано!', [0.7, 1, 0.7]);
+  floatPhrase(state, u.x, u.y - 30, 'act.evac', [0.7, 1, 0.7]);
   state.A.perk();
   burst(state, u.x, u.y, { n: 10, color: P.white, speed: 120, size: 10, life: 0.5 });
   console.log('EVAC +' + EBALY.evac + ' pending');

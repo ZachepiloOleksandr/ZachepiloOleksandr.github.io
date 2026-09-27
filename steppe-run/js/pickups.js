@@ -24,7 +24,7 @@ function collect(state, k) {
   const before = p.hp;
   p.hp = Math.min(p.maxHp, p.hp + k.value);
   state.A.perk();
-  const fr = state.atlas.phraseFrame['+HP'];
+  const fr = state.atlas.phraseFrame.hp;
   if (fr) addFloater(state, p.x, p.y - 30, fr, { color: [140, 255, 140] });
   console.log('LOOT medkit +' + Math.round(p.hp - before) + ' HP');
 }
