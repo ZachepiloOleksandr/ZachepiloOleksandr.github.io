@@ -20,6 +20,7 @@ export const ACT_KEYS = ['captured', 'finished', 'evac', 'bled'];
 
 const S = {
   uk: {
+    gear: 'Спорядження {n}/{m}',
     privacy: 'Конфіденційність', terms: 'Умови',
     title: 'СТЕПОВИЙ<br/>ЗАБІГ', tagline: 'Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?',
     start: 'ПОЧАТИ ЗАБІГ', market: 'МАРКЕТ', settings: 'НАЛАШТУВАННЯ',
@@ -67,6 +68,7 @@ const S = {
   },
 
   en: {
+    gear: 'Gear {n}/{m}',
     privacy: 'Privacy', terms: 'Terms',
     title: 'STEPPE<br/>RUN', tagline: 'Naked, barefoot and utterly hopeless.<br/>How many waves will you last?',
     start: 'START RUN', market: 'MARKET', settings: 'SETTINGS',
@@ -114,6 +116,7 @@ const S = {
   },
 
   pl: {
+    gear: 'Wyposażenie {n}/{m}',
     privacy: 'Prywatność', terms: 'Regulamin',
     title: 'STEPOWY<br/>BIEG', tagline: 'Nadzy, bosi i zupełnie bezradni.<br/>Ile fal przetrwasz?',
     start: 'START', market: 'SKLEP', settings: 'USTAWIENIA',
@@ -161,6 +164,7 @@ const S = {
   },
 
   de: {
+    gear: 'Ausrüstung {n}/{m}',
     privacy: 'Datenschutz', terms: 'Nutzungsbedingungen',
     title: 'STEPPEN-<br/>LAUF', tagline: 'Nackt, barfuß und völlig hilflos.<br/>Wie viele Wellen hältst du durch?',
     start: 'LAUF STARTEN', market: 'MARKT', settings: 'EINSTELLUNGEN',
@@ -208,6 +212,7 @@ const S = {
   },
 
   fr: {
+    gear: 'Équipement {n}/{m}',
     privacy: 'Confidentialité', terms: 'Conditions',
     title: 'COURSE<br/>DE LA STEPPE', tagline: 'Nus, pieds nus et complètement perdus.<br/>Combien de vagues tiendras-tu ?',
     start: 'COMMENCER', market: 'MARCHÉ', settings: 'PARAMÈTRES',
@@ -255,6 +260,7 @@ const S = {
   },
 
   es: {
+    gear: 'Equipo {n}/{m}',
     privacy: 'Privacidad', terms: 'Términos',
     title: 'CARRERA<br/>ESTEPARIA', tagline: 'Desnudos, descalzos y sin remedio.<br/>¿Cuántas oleadas aguantarás?',
     start: 'EMPEZAR', market: 'MERCADO', settings: 'AJUSTES',
@@ -302,6 +308,7 @@ const S = {
   },
 
   it: {
+    gear: 'Equipaggiamento {n}/{m}',
     privacy: 'Privacy', terms: 'Termini',
     title: 'CORSA<br/>NELLA STEPPA', tagline: 'Nudi, scalzi e del tutto impotenti.<br/>Quante ondate reggerai?',
     start: 'INIZIA', market: 'MERCATO', settings: 'IMPOSTAZIONI',
@@ -349,6 +356,7 @@ const S = {
   },
 
   pt: {
+    gear: 'Equipamento {n}/{m}',
     privacy: 'Privacidade', terms: 'Termos',
     title: 'CORRIDA<br/>NA ESTEPE', tagline: 'Nus, descalços e totalmente perdidos.<br/>Quantas ondas você aguenta?',
     start: 'COMEÇAR', market: 'MERCADO', settings: 'CONFIGURAÇÕES',
@@ -396,6 +404,7 @@ const S = {
   },
 
   tr: {
+    gear: 'Teçhizat {n}/{m}',
     privacy: 'Gizlilik', terms: 'Koşullar',
     title: 'BOZKIR<br/>KOŞUSU', tagline: 'Çıplak, yalınayak ve tamamen çaresiz.<br/>Kaç dalgaya dayanacaksın?',
     start: 'BAŞLA', market: 'PAZAR', settings: 'AYARLAR',
@@ -443,6 +452,7 @@ const S = {
   },
 
   zh: {
+    gear: '装备 {n}/{m}',
     privacy: '隐私政策', terms: '使用条款',
     title: '草原<br/>狂奔', tagline: '光着身子、光着脚、毫无办法。<br/>你能撑过几波？',
     start: '开始', market: '市场', settings: '设置',

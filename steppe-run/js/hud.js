@@ -1,6 +1,7 @@
 import { UPGRADES, upgradeCost } from './data.js';
 import { upgradeLevel, buyUpgrade } from './meta.js';
 import { t, LANGS, getLang, applyDom } from './i18n.js';
+import { createAvatar, gearLevel } from './avatar.js';
 
 // DOM overlays: HP/wave/kills/єБали, wave banner, menu, perk cards, death screen, meta shop, settings/pause.
 // Buttons call api.on* callbacks, wired by main.
@@ -10,7 +11,7 @@ export function createHud() {
     hud: $('hud'), hp: $('hpfill'), hpl: $('hplabel'),
     wave: $('waveLabel'), kill: $('killLabel'), eb: $('ebLabel'), banner: $('banner'),
     menu: $('menu'), menuBest: $('menuBest'), menuBank: $('menuBank'),
-    shop: $('shop'), shopBank: $('shopBank'), shopCards: $('shopCards'),
+    shop: $('shop'), shopBank: $('shopBank'), shopCards: $('shopCards'), shopStage: $('shopStage'), shopGear: $('shopGear'),
     perks: $('perks'), perkCards: $('perkCards'), perkNote: $('perkNote'),
     death: $('death'), deathStats: $('deathStats'),
     start: $('startBtn'), retry: $('retryBtn'), stick: $('stick'),
@@ -32,7 +33,7 @@ export function createHud() {
   }
 
   const api = {
-    onStart: null, onRetry: null, onMenu: null, onBankChange: null, bank: null,
+    onStart: null, onRetry: null, onMenu: null, onBankChange: null, onBuy: null, bank: null,
     onDrone: null, onFinish: null, onCapture: null,
     onPause: null, onResume: null, onSettingsChange: null, settings: null,
 
@@ -149,10 +150,15 @@ export function createHud() {
   }
   api.relabel = relabel;
 
-  function renderShop() {
+  let avatar = null;
+  function renderShop(bought) {
     const bank = api.bank;
+    if (!avatar) avatar = createAvatar(el.shopStage);
+    avatar.update(bank, bought);
     el.shopBank.innerHTML = t('shopBalance', { n: bank.ebaly });
+    el.shopGear.textContent = t('gear', gearLevel(bank));
     el.menuBank.textContent = bank.ebaly;
+    const scroll = el.shopCards.scrollTop; // keep the list where it was after a purchase re-render
     el.shopCards.innerHTML = '';
     for (const u of UPGRADES) {
       const lvl = upgradeLevel(bank, u.id), maxed = lvl >= u.max;
@@ -164,11 +170,15 @@ export function createHud() {
       c.innerHTML = `<div class="ic">${icon}</div><div class="txt"><h3>${t('up.' + u.id)} <span class="pips">${pips}</span></h3><p>${t('up.' + u.id + '.d')}</p></div>` +
         `<div class="price">${maxed ? t('max') : cost + ' ' + t('eb')}</div>`;
       if (!maxed) c.addEventListener('click', () => {
-        if (buyUpgrade(bank, u)) { api.onBankChange && api.onBankChange(); renderShop(); }
+        if (buyUpgrade(bank, u)) { api.onBankChange && api.onBankChange(); api.onBuy && api.onBuy(u.id); renderShop(u.id); }
         else { c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
       });
+      // Hover (or press on touch): glow the gear this upgrade gives and ghost what the next level adds.
+      c.addEventListener('pointerenter', () => avatar.preview(u.id));
+      c.addEventListener('pointerleave', () => avatar.preview(null));
       el.shopCards.appendChild(c);
     }
+    el.shopCards.scrollTop = scroll;
   }
 
   function renderSettings() {

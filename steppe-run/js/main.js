@@ -241,6 +241,7 @@ function main() {
   hud.onCapture = () => startCapture(state);
   hud.bank = state.bank;
   hud.onBankChange = () => saveBank(state.bank);
+  hud.onBuy = () => { A.resume(); A.perk(); };
   // Persist the bank if the app is backgrounded/closed mid-run.
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveBank(state.bank); });
 

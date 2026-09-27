@@ -280,7 +280,7 @@ html, body {
 }
 .btn2:active { box-shadow: 0 2px 0 #3e2c12, 0 4px 10px rgba(0,0,0,0.45); }
 #ebLabel { color: #ffd75e !important; }
-#shopCards { display: flex; flex-direction: column; gap: 10px; width: min(92vw, 440px); max-height: 58vh; overflow-y: auto; }
+#shopCards { display: flex; flex-direction: column; gap: 10px; width: min(100%, 460px); align-self: center; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 2px 2px 6px; }
 .shopCard { padding: 12px 14px; }
 .shopCard .txt { flex: 1; text-align: left; }
 .shopCard .pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
@@ -291,7 +291,7 @@ html, body {
 .shopCard.maxed { border-color: var(--good); opacity: 0.8; }
 .shopCard.shake { animation: shopShake 0.3s; }
 @keyframes shopShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-#shop .sub small, #deathStats small { color: #bcae8a; font-size: 0.72em; }
+#deathStats small { color: #bcae8a; font-size: 0.72em; }
 
 /* ---------- Combat buttons (drone / finish / capture) ---------- */
 .actBtn {
@@ -361,3 +361,65 @@ html, body {
 
 .legal { font-size: 12px; color: #bcae8a; }
 .legal a { color: #bcae8a; pointer-events: auto; }
+
+/* ---------- Маркет: layout with the avatar stage ---------- */
+#shop { justify-content: flex-start; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+#shop h2 { font-size: clamp(24px, 7.5vw, 42px); }
+#shopBody { flex: 1 1 auto; min-height: 0; width: min(96vw, 940px); display: flex; flex-direction: column; gap: 8px; }
+#shopHero { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#shopStage {
+  height: clamp(170px, 33vh, 330px); aspect-ratio: 260 / 300;
+  background: radial-gradient(ellipse 60% 55% at 50% 52%, rgba(242,207,94,0.26), rgba(242,207,94,0) 70%);
+}
+#shopInfo { color: #efe2bf; font-weight: bold; font-size: clamp(13px, 3.9vw, 17px); }
+#shopInfo b { color: var(--gold); }
+#shopGear { color: #bcae8a; }
+.shopNote { color: #bcae8a; font-size: clamp(11px, 3.2vw, 13px); max-width: 460px; }
+@media (min-width: 760px) and (min-aspect-ratio: 1/1) {
+  #shopBody { flex-direction: row; align-items: stretch; }
+  #shopHero { flex: 0 0 44%; justify-content: center; }
+  #shopStage { height: min(64vh, 470px); }
+  #shopCards { align-self: stretch; }
+}
+
+/* ---------- avatar animation ---------- */
+.avatar { width: 100%; height: 100%; display: block; overflow: visible; }
+.avatar .av-upper { animation: avBreathe 3.2s ease-in-out infinite; }
+@keyframes avBreathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+.avatar .av-head { transform-origin: 130px 99px; animation: avHead 6.5s ease-in-out infinite; }
+@keyframes avHead { 0%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-2.2deg); } 65% { transform: rotate(1.6deg); } }
+.avatar .av-eyes { transform-box: fill-box; transform-origin: center; animation: avBlink 4.8s infinite; }
+@keyframes avBlink { 0%, 92%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+.avatar .av-drone { animation: avHover 2.2s ease-in-out infinite; }
+.avatar .av-drone.b { animation-duration: 2.7s; animation-delay: -1.2s; }
+@keyframes avHover { 0%, 100% { transform: translate(0, 0) rotate(-3deg); } 50% { transform: translate(-2px, -6px) rotate(3deg); } }
+.avatar .av-prop { transform-box: fill-box; transform-origin: center; animation: avProp 0.13s linear infinite; }
+@keyframes avProp { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.22); } }
+.avatar .av-led { animation: avLed 1.1s infinite; }
+.avatar .av-led.b { animation-duration: 0.8s; }
+.avatar .av-led.c { animation-duration: 1.5s; animation-delay: -0.4s; }
+@keyframes avLed { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.15; } }
+.avatar .av-antenna { animation: avSway 2.8s ease-in-out infinite; }
+.avatar .av-antenna.b { animation-delay: -1.1s; }
+.avatar .av-antenna.c { animation-duration: 3.4s; }
+.avatar .av-antenna.d { animation-duration: 1.4s; }
+@keyframes avSway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+.avatar .av-ugv { animation: avUgv 1.6s ease-in-out infinite; }
+@keyframes avUgv { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.3px); } }
+.avatar .av-tread { animation: avTread 0.5s linear infinite; }
+@keyframes avTread { to { stroke-dashoffset: -6; } }
+.avatar .av-dust circle { transform-box: fill-box; transform-origin: center; animation: avDust 0.9s ease-out infinite; }
+@keyframes avDust { 0% { transform: translateY(0) scale(0.3); opacity: 0.85; } 100% { transform: translateY(-5px) scale(1.7); opacity: 0; } }
+.avatar .av-beam { animation: avBeam 2.4s ease-in-out infinite; }
+@keyframes avBeam { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.95; } }
+.avatar .av-glint { animation: avGlint 1.8s ease-in-out infinite; }
+@keyframes avGlint { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+.avatar .av-chart { stroke-dasharray: 26; animation: avChart 2.4s linear infinite; }
+@keyframes avChart { 0% { stroke-dashoffset: 26; } 60%, 100% { stroke-dashoffset: 0; } }
+.avatar .pop { transform-box: fill-box; transform-origin: center; animation: avPop 0.7s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes avPop { 0% { transform: scale(0.2); opacity: 0; } 55% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.avatar .av-spark { transform-box: fill-box; transform-origin: center; animation: avSpark 0.85s ease-out forwards; }
+@keyframes avSpark { 0% { transform: scale(0.3) rotate(0deg); opacity: 1; } 100% { transform: scale(1.7) rotate(40deg); opacity: 0; } }
+.avatar .ghost { opacity: 0.4; }
+.avatar .hl { filter: url(#avGlow); }
+@media (prefers-reduced-motion: reduce) { .avatar * { animation: none !important; } }
