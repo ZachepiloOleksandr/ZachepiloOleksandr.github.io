@@ -1,4 +1,4 @@
-const CACHE = "steppe-v9";
+const CACHE = "steppe-v10";
 self.addEventListener("install", () => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(
@@ -10,6 +10,8 @@ self.addEventListener("activate", (e) => {
 // Stale-while-revalidate: instant (offline-capable) start, new deploys land on the next launch.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  // Only our own files: ads/analytics and other third-party requests always go straight to the network.
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.open(CACHE).then((cache) =>
       cache.match(e.request).then((hit) => {
