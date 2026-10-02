@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "ua.steppe.run.twa",
       "sha256_cert_fingerprints": [
-        "55:38:16:78:7E:29:E0:D0:CE:74:6F:7C:8D:96:2B:16:04:F3:E2:39:0D:28:BC:ED:6A:31:9A:F6:33:ED:70:E3"
+        "55:38:16:78:7E:29:E0:D0:CE:74:6F:7C:8D:96:2B:16:04:F3:E2:39:0D:28:BC:ED:6A:31:9A:F6:33:ED:70:E3",
+        "5B:29:B1:7E:6D:14:63:6F:48:6F:69:DE:94:73:3D:28:08:1A:89:65:12:DE:D9:02:6D:EA:AF:62:34:78:ED:08"
       ]
     }
   }
