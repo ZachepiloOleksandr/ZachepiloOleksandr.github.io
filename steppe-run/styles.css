@@ -423,3 +423,4 @@ html, body {
 .avatar .ghost { opacity: 0.4; }
 .avatar .hl { filter: url(#avGlow); }
 @media (prefers-reduced-motion: reduce) { .avatar * { animation: none !important; } }
+.langBtn.auto { grid-column: 1 / -1; }

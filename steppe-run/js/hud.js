@@ -1,6 +1,6 @@
 import { UPGRADES, upgradeCost } from './data.js';
 import { upgradeLevel, buyUpgrade } from './meta.js';
-import { t, LANGS, getLang, applyDom } from './i18n.js';
+import { t, LANGS, AUTO, applyDom } from './i18n.js';
 import { createAvatar, gearLevel } from './avatar.js';
 
 // DOM overlays: HP/wave/kills/єБали, wave banner, menu, perk cards, death screen, meta shop, settings/pause.
@@ -191,11 +191,11 @@ export function createHud() {
     el.setMusic.textContent = s.music ? t('on') : t('off');
     el.setMusic.classList.toggle('off', !s.music);
     el.setLangs.innerHTML = '';
-    for (const l of LANGS) {
+    for (const l of [{ id: AUTO, name: t('langAuto') }, ...LANGS]) {
       const b = document.createElement('button');
-      b.className = 'langBtn' + (l.id === getLang() ? ' on' : '');
+      b.className = 'langBtn' + (l.id === s.language ? ' on' : '') + (l.id === AUTO ? ' auto' : '');
       b.textContent = l.name;
-      b.addEventListener('click', () => changeSetting({ lang: l.id }));
+      b.addEventListener('click', () => changeSetting({ language: l.id }));
       el.setLangs.appendChild(b);
     }
     el.setResume.classList.toggle('hidden', settingsFrom !== 'pause');
@@ -206,7 +206,7 @@ export function createHud() {
   function changeSetting(patch) {
     Object.assign(api.settings, patch);
     api.onSettingsChange && api.onSettingsChange(patch);
-    if ('lang' in patch) relabel();
+    if ('language' in patch) relabel();
     renderSettings();
   }
 

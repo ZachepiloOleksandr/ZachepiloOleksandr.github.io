@@ -13,7 +13,7 @@ import { updateEnemies, drawEnemy } from './enemies.js';
 import { startRun, startWave, updateWaves } from './waves.js';
 import { updateFx, drawParticles, drawFloaters, drawExplosions } from './fx.js';
 import { PERKS, LOOT, EBALY } from './data.js';
-import { setLang, applyDom, t } from './i18n.js';
+import { setLang, applyDom, t, resolveLang } from './i18n.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { loadBank, saveBank, applyUpgrades } from './meta.js';
 import { updatePickups, drawPickups, vacuumPickups } from './pickups.js';
@@ -31,7 +31,7 @@ function saveBest(b) { try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); 
 
 function main() {
   const settings = loadSettings();
-  setLang(settings.lang);
+  setLang(resolveLang(settings.language));
   applyDom();
   console.log('SETTINGS ' + JSON.stringify(settings));
 
@@ -216,13 +216,19 @@ function main() {
     saveSettings(settings);
     A.resume();
     A.configure(settings);
-    if ('lang' in patch) {
-      setLang(settings.lang);
+    if ('language' in patch) {
+      setLang(resolveLang(settings.language));
       state.atlas = buildAtlas();
       R.setAtlas(state.atlas);
-      console.log('LANG → ' + settings.lang);
+      console.log('LANG → ' + settings.language + ' (' + resolveLang(settings.language) + ')');
     }
   };
+  // Auto language: follow the device if the user switches the system language while the game is open.
+  window.addEventListener('languagechange', () => {
+    if (settings.language !== 'auto') return;
+    hud.onSettingsChange({ language: 'auto' });
+    hud.relabel();
+  });
   let pausedFrom = null;
   hud.onPause = () => {
     if (state.status !== 'playing') return false;

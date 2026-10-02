@@ -20,6 +20,7 @@ export const ACT_KEYS = ['captured', 'finished', 'evac', 'bled'];
 
 const S = {
   uk: {
+    langAuto: "🌐 Авто (мова пристрою)",
     gear: 'Спорядження {n}/{m}',
     privacy: 'Конфіденційність', terms: 'Умови',
     title: 'СТЕПОВИЙ<br/>ЗАБІГ', tagline: 'Голі, босі та геть безпорадні.<br/>Скільки хвиль протримаєшся?',
@@ -68,6 +69,7 @@ const S = {
   },
 
   en: {
+    langAuto: "🌐 Auto (device language)",
     gear: 'Gear {n}/{m}',
     privacy: 'Privacy', terms: 'Terms',
     title: 'STEPPE<br/>RUN', tagline: 'Naked, barefoot and utterly hopeless.<br/>How many waves will you last?',
@@ -116,6 +118,7 @@ const S = {
   },
 
   pl: {
+    langAuto: "🌐 Auto (język urządzenia)",
     gear: 'Wyposażenie {n}/{m}',
     privacy: 'Prywatność', terms: 'Regulamin',
     title: 'STEPOWY<br/>BIEG', tagline: 'Nadzy, bosi i zupełnie bezradni.<br/>Ile fal przetrwasz?',
@@ -164,6 +167,7 @@ const S = {
   },
 
   de: {
+    langAuto: "🌐 Auto (Gerätesprache)",
     gear: 'Ausrüstung {n}/{m}',
     privacy: 'Datenschutz', terms: 'Nutzungsbedingungen',
     title: 'STEPPEN-<br/>LAUF', tagline: 'Nackt, barfuß und völlig hilflos.<br/>Wie viele Wellen hältst du durch?',
@@ -212,6 +216,7 @@ const S = {
   },
 
   fr: {
+    langAuto: "🌐 Auto (langue de l'appareil)",
     gear: 'Équipement {n}/{m}',
     privacy: 'Confidentialité', terms: 'Conditions',
     title: 'COURSE<br/>DE LA STEPPE', tagline: 'Nus, pieds nus et complètement perdus.<br/>Combien de vagues tiendras-tu ?',
@@ -260,6 +265,7 @@ const S = {
   },
 
   es: {
+    langAuto: "🌐 Auto (idioma del dispositivo)",
     gear: 'Equipo {n}/{m}',
     privacy: 'Privacidad', terms: 'Términos',
     title: 'CARRERA<br/>ESTEPARIA', tagline: 'Desnudos, descalzos y sin remedio.<br/>¿Cuántas oleadas aguantarás?',
@@ -308,6 +314,7 @@ const S = {
   },
 
   it: {
+    langAuto: "🌐 Auto (lingua del dispositivo)",
     gear: 'Equipaggiamento {n}/{m}',
     privacy: 'Privacy', terms: 'Termini',
     title: 'CORSA<br/>NELLA STEPPA', tagline: 'Nudi, scalzi e del tutto impotenti.<br/>Quante ondate reggerai?',
@@ -356,6 +363,7 @@ const S = {
   },
 
   pt: {
+    langAuto: "🌐 Auto (idioma do dispositivo)",
     gear: 'Equipamento {n}/{m}',
     privacy: 'Privacidade', terms: 'Termos',
     title: 'CORRIDA<br/>NA ESTEPE', tagline: 'Nus, descalços e totalmente perdidos.<br/>Quantas ondas você aguenta?',
@@ -404,6 +412,7 @@ const S = {
   },
 
   tr: {
+    langAuto: "🌐 Otomatik (cihaz dili)",
     gear: 'Teçhizat {n}/{m}',
     privacy: 'Gizlilik', terms: 'Koşullar',
     title: 'BOZKIR<br/>KOŞUSU', tagline: 'Çıplak, yalınayak ve tamamen çaresiz.<br/>Kaç dalgaya dayanacaksın?',
@@ -452,6 +461,7 @@ const S = {
   },
 
   zh: {
+    langAuto: "🌐 自动（设备语言）",
     gear: '装备 {n}/{m}',
     privacy: '隐私政策', terms: '使用条款',
     title: '草原<br/>狂奔', tagline: '光着身子、光着脚、毫无办法。<br/>你能撑过几波？',
@@ -503,12 +513,19 @@ const S = {
 let lang = 'uk';
 
 // Device language → supported language; ru/be devices (common in Ukraine) default to Ukrainian.
+// Walks the device's preferred languages (navigator.languages) and takes the first we support;
+// ru/be map to Ukrainian only if nothing else in the list matches. Unknown → English.
+export const AUTO = 'auto';
 const LANG_ALIASES = { ru: 'uk', be: 'uk' };
 export function detectLang() {
-  const nav = (navigator.language || 'uk').toLowerCase().slice(0, 2);
-  const id = LANG_ALIASES[nav] || nav;
-  return S[id] ? id : 'en';
+  const prefs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'])
+    .map((l) => String(l).toLowerCase().slice(0, 2));
+  const direct = prefs.find((id) => S[id]);
+  if (direct) return direct;
+  const alias = prefs.map((id) => LANG_ALIASES[id]).find(Boolean);
+  return alias || 'en';
 }
+export function resolveLang(pref) { return pref === AUTO || !S[pref] ? detectLang() : pref; }
 
 export function setLang(id) { lang = S[id] ? id : 'en'; document.documentElement.lang = lang; }
 export function getLang() { return lang; }
